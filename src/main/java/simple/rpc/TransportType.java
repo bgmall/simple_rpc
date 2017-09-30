@@ -1,8 +1,23 @@
 package simple.rpc;
 
-public class TransportType {
+public enum TransportType {
 
-    private static final byte MESSAGE = 0;
+    // 0
+    MESSAGE((byte) 0),
+    // 11
+    RPC_ONEWAY((byte) (1 & 0x3)),
+    // 101
+    RPC_ASYNC((byte) (1 & 0x5)),
+    // 1001
+    RPC_SYNC((byte) (1 & 0x9));
 
-    private static final byte RPC = 1;
+    private byte flag;
+
+    private TransportType(byte flag) {
+        this.flag = flag;
+    }
+
+    public byte getFlag() {
+        return this.flag;
+    }
 }

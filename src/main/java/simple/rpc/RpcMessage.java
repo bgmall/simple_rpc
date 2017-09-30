@@ -5,6 +5,8 @@ import simple.net.Message;
 public class RpcMessage implements Message {
 
     private byte flag;
+    // 唯一标识msg
+    private long uuid;
 
     private int id;
 
