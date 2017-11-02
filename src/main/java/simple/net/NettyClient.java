@@ -10,6 +10,11 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timer;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class NettyClient<M extends Message> extends Bootstrap implements NettyService {
 
@@ -19,6 +24,8 @@ public class NettyClient<M extends Message> extends Bootstrap implements NettySe
     private static final String MESSAGE_DECODER = "message_decoder";
     private static final String MESSAGE_ENCODER = "message_encoder";
     private static final String MESSAGE_HANDLER = "message_handler";
+
+    private static Timer timer = new HashedWheelTimer(Executors.defaultThreadFactory(), 100L, TimeUnit.MILLISECONDS, 2048);
 
     private ByteToMessageDecoder decoder;
     private MessageToByteEncoder<M> encoder;
@@ -99,6 +106,9 @@ public class NettyClient<M extends Message> extends Bootstrap implements NettySe
         }
     }
 
+    public Timer getTimer() {
+        return timer;
+    }
 
     public void start() {
         this.verify();
@@ -121,6 +131,9 @@ public class NettyClient<M extends Message> extends Bootstrap implements NettySe
     public void shutdown() {
         if (workerGroup != null) {
             workerGroup.shutdownGracefully();
+        }
+        if (timer != null) {
+            timer.stop();
         }
     }
 }

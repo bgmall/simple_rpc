@@ -1,4 +1,6 @@
 package simple.rpc;
 
-public class NettyRpcServerOptions {
+import simple.net.NettyServerOptions;
+
+public class NettyRpcServerOptions extends NettyServerOptions {
 }
