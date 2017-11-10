@@ -1,5 +1,8 @@
 package simple.rpc;
 
 public interface RpcCallback {
-    void run(RpcClientCallState rpcClientCallState);
+
+    void result(RpcMessage response);
+
+    void exceptionCaught(RuntimeException ex);
 }

@@ -1,11 +1,8 @@
 package simple.rpc;
 
-import simple.net.NettyServer;
 import simple.net.NettyService;
 
-public class NettyRpcServer implements NettyService {
-
-    private NettyServer<RpcMessage> server;
+public class RpcServer implements NettyService {
 
     @Override
     public void start() {

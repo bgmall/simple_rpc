@@ -4,10 +4,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
-public class NettyRpcMessageDecoder extends LengthFieldBasedFrameDecoder {
+public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
 
-    public NettyRpcMessageDecoder(int maxFrameLength) {
-        super(maxFrameLength, RpcMessage.HEAD_FIXED_LENGTH  - RpcMessage.HEAD_DATA_LENGTH, RpcMessage.HEAD_DATA_LENGTH);
+    public RpcMessageDecoder(int maxFrameLength) {
+        super(maxFrameLength, RpcMessage.MESSAGE_FIXED_LENGTH - RpcMessage.MESSAGE_DATA_LENGTH, RpcMessage.MESSAGE_DATA_LENGTH);
     }
 
     @Override

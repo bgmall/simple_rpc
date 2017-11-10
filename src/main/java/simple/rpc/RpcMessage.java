@@ -1,27 +1,29 @@
 package simple.rpc;
 
 import io.netty.buffer.ByteBuf;
-import simple.net.Message;
 
-public class RpcMessage implements Message {
+public class RpcMessage {
 
-    public static final int HEAD_FLAG_LENGTH = 1;
-    public static final int HEAD_UUID_LENGTH = 8;
-    public static final int HEAD_ID_LENGTH = 4;
-    public static final int HEAD_DATA_LENGTH = 4;
-    public static final int HEAD_FIXED_LENGTH = HEAD_FLAG_LENGTH + HEAD_UUID_LENGTH + HEAD_ID_LENGTH + HEAD_DATA_LENGTH;
+    public static final int MESSAGE_FLAG_LENGTH = 1;
+    public static final int MESSAGE_UUID_LENGTH = 8;
+    public static final int MESSAGE_ID_LENGTH = 4;
+    public static final int MESSAGE_DATA_LENGTH = 4;
+    public static final int MESSAGE_FIXED_LENGTH = MESSAGE_FLAG_LENGTH + MESSAGE_UUID_LENGTH + MESSAGE_ID_LENGTH + MESSAGE_DATA_LENGTH;
 
     private byte flag;
-    // 唯一标识msg
-    private long uuid;
+    // rpc correlationId or the playerId of forward msg
+    private long id;
 
-    private int id;
+    private int msgId;
 
     private byte[] data;
 
-    @Override
-    public int getId() {
+    public long getId() {
         return id;
+    }
+
+    public int getMsgId() {
+        return msgId;
     }
 
     public static RpcMessage decode(ByteBuf byteBuf) {
@@ -33,16 +35,16 @@ public class RpcMessage implements Message {
         byteBuf.readBytes(data, 0, length);
         RpcMessage rpcMessage = new RpcMessage();
         rpcMessage.flag = flag;
-        rpcMessage.uuid = uuid;
-        rpcMessage.id = id;
+        rpcMessage.id = uuid;
+        rpcMessage.msgId = id;
         rpcMessage.data = data;
         return rpcMessage;
     }
 
     public static void encode(ByteBuf byteBuf, RpcMessage message) {
         byteBuf.writeByte(message.flag);
-        byteBuf.writeLong(message.uuid);
-        byteBuf.writeInt(message.id);
+        byteBuf.writeLong(message.id);
+        byteBuf.writeInt(message.msgId);
         byteBuf.writeInt(message.data.length);
         byteBuf.writeBytes(message.data);
     }

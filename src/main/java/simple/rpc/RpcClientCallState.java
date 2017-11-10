@@ -10,12 +10,22 @@ public class RpcClientCallState {
 
     private Timeout timeout;
 
-    public RpcClientCallState(RpcCallback callback) {
-        this.callback = callback;
+    public void handleException(RuntimeException ex) {
+        if (this.timeout != null) {
+            this.timeout.cancel();
+        }
+        if (callback != null) {
+            callback.exceptionCaught(ex);
+        }
     }
 
-    public void handleTimeout() {
-
+    public void handleResponse(RpcMessage response) {
+        if (this.timeout != null) {
+            this.timeout.cancel();
+        }
+        if (callback != null) {
+            callback.result(response);
+        }
     }
 
     public Timeout getTimeout() {
@@ -32,5 +42,13 @@ public class RpcClientCallState {
 
     public void setCorrelationId(long correlationId) {
         this.correlationId = correlationId;
+    }
+
+    public RpcCallback getCallback() {
+        return callback;
+    }
+
+    public void setCallback(RpcCallback callback) {
+        this.callback = callback;
     }
 }

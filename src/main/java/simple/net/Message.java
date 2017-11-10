@@ -2,5 +2,5 @@ package simple.net;
 
 public interface Message {
 
-    int getId();
+    int getMsgId();
 }
