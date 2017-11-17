@@ -14,6 +14,8 @@ public class MessageDecoder extends ByteToMessageDecoder {
     // 压缩标记占位高8位, 也就是说消息最大长度是2^23长度字节大小
     private static final int COMPRESS_BIT = 1 << 24;
 
+    private static final int CODEC_BIT = 0;
+
     private int maxFrameLength;
 
     public MessageDecoder(int maxFrameLength) {

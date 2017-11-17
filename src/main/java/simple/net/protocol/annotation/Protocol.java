@@ -14,5 +14,5 @@ public @interface Protocol {
      */
     int msgId();
 
-    int codec();
+    byte codec();
 }

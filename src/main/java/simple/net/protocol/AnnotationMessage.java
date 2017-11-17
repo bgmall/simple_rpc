@@ -12,4 +12,13 @@ public abstract class AnnotationMessage implements Message {
         }
         return 0;
     }
+
+    @Override
+    public byte getProtocolCode() {
+        Protocol annotation = this.getClass().getAnnotation(Protocol.class);
+        if (annotation != null) {
+            return annotation.codec();
+        }
+        return 0;
+    }
 }
