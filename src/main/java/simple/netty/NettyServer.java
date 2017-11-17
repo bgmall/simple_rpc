@@ -1,4 +1,4 @@
-package simple.net;
+package simple.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -44,7 +44,7 @@ public class NettyServer<M extends Message> extends ServerBootstrap implements N
     public NettyServer(NettyServerOptions serverOptions) {
         Class<? extends ServerChannel> serverChannelClass;
         if ("Linux".equals(System.getProperty("os.name"))) {
-            // required lib : netty-transport-native-epoll
+            // required lib : net-transport-native-epoll
             this.bossGroup = new EpollEventLoopGroup(2);
             this.workerGroup = new EpollEventLoopGroup(serverOptions.getWorkThreads());
             serverChannelClass = EpollServerSocketChannel.class;

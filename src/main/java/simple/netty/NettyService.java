@@ -1,4 +1,4 @@
-package simple.net;
+package simple.netty;
 
 public interface NettyService {
 

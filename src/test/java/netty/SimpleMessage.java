@@ -1,13 +1,13 @@
-package net;
+package netty;
 
-import simple.net.Message;
+import simple.netty.Message;
 
 public class SimpleMessage implements Message {
 
     private int id;
     private String str;
 
-    public int getId() {
+    public int getMsgId() {
         return id;
     }
 

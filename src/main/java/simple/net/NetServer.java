@@ -1,4 +1,4 @@
-package simple.rpc;
+package simple.net;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -9,15 +9,16 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import simple.rpc.RpcServerOptions;
 import simple.util.NettyUtil;
 
 import java.net.InetSocketAddress;
 
-public class RpcServer extends ServerBootstrap {
+public class NetServer extends ServerBootstrap {
 
-    private static final InternalLogger logger = InternalLoggerFactory.getInstance(RpcServer.class);
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetServer.class);
 
-    private RpcServerOptions rpcServerOptions;
+    private RpcServerOptions serverOptions;
     /**
      * The boss group.
      */
@@ -31,32 +32,32 @@ public class RpcServer extends ServerBootstrap {
      */
     private Channel channel;
 
-    public RpcServer(RpcServerOptions rpcServerOptions) {
-        this.rpcServerOptions = rpcServerOptions;
+    public NetServer(RpcServerOptions serverOptions) {
+        this.serverOptions = serverOptions;
 
         Class<? extends ServerChannel> serverChannel;
         if (NettyUtil.isLinuxPlatform()) {
-            this.bossGroup = new EpollEventLoopGroup(rpcServerOptions.getAcceptorThreads());
-            this.workerGroup = new EpollEventLoopGroup(rpcServerOptions.getWorkThreads());
+            this.bossGroup = new EpollEventLoopGroup(serverOptions.getAcceptorThreads());
+            this.workerGroup = new EpollEventLoopGroup(serverOptions.getWorkThreads());
             serverChannel = EpollServerSocketChannel.class;
         } else {
-            this.bossGroup = new NioEventLoopGroup(rpcServerOptions.getAcceptorThreads());
-            this.workerGroup = new NioEventLoopGroup(rpcServerOptions.getWorkThreads());
+            this.bossGroup = new NioEventLoopGroup(serverOptions.getAcceptorThreads());
+            this.workerGroup = new NioEventLoopGroup(serverOptions.getWorkThreads());
             serverChannel = NioServerSocketChannel.class;
         }
 
         this.group(this.bossGroup, this.workerGroup);
         this.channel(serverChannel);
-        this.option(ChannelOption.SO_BACKLOG, rpcServerOptions.getBacklog());
+        this.option(ChannelOption.SO_BACKLOG, serverOptions.getBacklog());
 
-        this.childOption(ChannelOption.SO_KEEPALIVE, rpcServerOptions.isKeepAlive());
+        this.childOption(ChannelOption.SO_KEEPALIVE, serverOptions.isKeepAlive());
         this.childOption(ChannelOption.SO_REUSEADDR, true);
         this.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        this.childOption(ChannelOption.TCP_NODELAY, rpcServerOptions.isTcpNoDelay());
-        this.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, rpcServerOptions.getConnectTimeout());
-        this.childOption(ChannelOption.SO_RCVBUF, rpcServerOptions.getReceiveBufferSize());
-        this.childOption(ChannelOption.SO_SNDBUF, rpcServerOptions.getSendBufferSize());
-        this.childHandler(new RpcServerChannelInitializer(this));
+        this.childOption(ChannelOption.TCP_NODELAY, serverOptions.isTcpNoDelay());
+        this.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, serverOptions.getConnectTimeout());
+        this.childOption(ChannelOption.SO_RCVBUF, serverOptions.getReceiveBufferSize());
+        this.childOption(ChannelOption.SO_SNDBUF, serverOptions.getSendBufferSize());
+        this.childHandler(new NetServerChannelInitializer(this));
     }
 
     public void start(int port) {
@@ -98,7 +99,7 @@ public class RpcServer extends ServerBootstrap {
         workerGroup.shutdownGracefully();
     }
 
-    public RpcServerOptions getRpcServerOptions() {
-        return rpcServerOptions;
+    public RpcServerOptions getServerOptions() {
+        return serverOptions;
     }
 }

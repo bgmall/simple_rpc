@@ -1,6 +1,7 @@
 package simple.rpc;
 
 import io.netty.buffer.ByteBuf;
+import simple.rpc.annotation.RpcProtocol;
 
 public class RpcMessage {
 
@@ -14,16 +15,10 @@ public class RpcMessage {
     // rpc correlationId or the playerId of forward msg
     private long id;
 
-    private int msgId;
-
     private byte[] data;
 
     public long getId() {
         return id;
-    }
-
-    public int getMsgId() {
-        return msgId;
     }
 
     public static RpcMessage decode(ByteBuf byteBuf) {
@@ -36,7 +31,6 @@ public class RpcMessage {
         RpcMessage rpcMessage = new RpcMessage();
         rpcMessage.flag = flag;
         rpcMessage.id = uuid;
-        rpcMessage.msgId = id;
         rpcMessage.data = data;
         return rpcMessage;
     }
@@ -44,8 +38,16 @@ public class RpcMessage {
     public static void encode(ByteBuf byteBuf, RpcMessage message) {
         byteBuf.writeByte(message.flag);
         byteBuf.writeLong(message.id);
-        byteBuf.writeInt(message.msgId);
+        byteBuf.writeInt(message.getMsgId());
         byteBuf.writeInt(message.data.length);
         byteBuf.writeBytes(message.data);
+    }
+
+    public int getMsgId() {
+        RpcProtocol annotation = this.getClass().getAnnotation(RpcProtocol.class);
+        if (annotation != null) {
+            return annotation.msgId();
+        }
+        return 0;
     }
 }

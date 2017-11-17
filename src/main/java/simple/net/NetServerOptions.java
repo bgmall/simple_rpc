@@ -1,35 +1,60 @@
 package simple.net;
 
-public class NettyServerOptions {
+public class NetServerOptions {
 
-    /** backlog. */
+    /**
+     * backlog.
+     */
     private int backlog;
 
-    /** The connect timeout in milliseconds */
+    /**
+     * The connect timeout in milliseconds
+     */
     private int connectTimeout;
 
-    /** The send buffer size. */
+    /**
+     * The send buffer size.
+     */
     private int sendBufferSize;
 
-    /** The receive buffer size. */
+    /**
+     * The receive buffer size.
+     */
     private int receiveBufferSize;
 
-    /** The max length of package */
+    /**
+     * The max length of package
+     */
     private int maxFrameLength;
 
-    /** The tcp no delay. */
+    /**
+     * The tcp no delay.
+     */
     private boolean tcpNoDelay;
 
-    /** The keep alive. */
+    /**
+     * The keep alive.
+     */
     private boolean keepAlive;
 
-    /** The reuse address. */
+    /**
+     * The reuse address.
+     */
     private boolean reuseAddress;
 
-    /** The idle timeout. */
+    /**
+     * The idle timeout.
+     */
     private int idleTimeoutSeconds;
 
-    /** The event loop thread pool size. */
+    /**
+     * The acceptor threads.
+     */
+    private int acceptorThreads = 0; // acceptor threads. default use Netty default value
+
+    /**
+     * The event loop thread pool size.
+     */
     private int workThreads = 20;
 
     public int getBacklog() {
@@ -104,11 +129,16 @@ public class NettyServerOptions {
         this.workThreads = workThreads;
     }
 
+    public int getAcceptorThreads() {
+        return acceptorThreads;
+    }
+
+    public void setAcceptorThreads(int acceptorThreads) {
+        this.acceptorThreads = acceptorThreads;
+    }
+
     public int getMaxFrameLength() {
         return maxFrameLength;
     }
 
-    public void setMaxFrameLength(int maxFrameLength) {
-        this.maxFrameLength = maxFrameLength;
-    }
 }

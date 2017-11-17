@@ -1,4 +1,4 @@
-package net;
+package netty;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -9,10 +9,10 @@ import io.netty.handler.timeout.IdleStateEvent;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import simple.net.NettyClient;
-import simple.net.NettyClientOptions;
-import simple.net.NettyServer;
-import simple.net.NettyServerOptions;
+import simple.netty.NettyClient;
+import simple.netty.NettyClientOptions;
+import simple.netty.NettyServer;
+import simple.netty.NettyServerOptions;
 
 import java.util.List;
 
@@ -65,9 +65,9 @@ public class NettyClientTest {
 
         @Override
         protected void encode(ChannelHandlerContext channelHandlerContext, SimpleMessage simpleMessage, ByteBuf byteBuf) throws Exception {
-            System.out.println("encode: msgId=" + simpleMessage.getId() + ", data=" + simpleMessage.getStr());
+            System.out.println("encode: msgId=" + simpleMessage.getMsgId() + ", data=" + simpleMessage.getStr());
             byte[] data = simpleMessage.getStr().getBytes();
-            byteBuf.writeInt(simpleMessage.getId());
+            byteBuf.writeInt(simpleMessage.getMsgId());
             byteBuf.writeInt(data.length);
             byteBuf.writeBytes(data);
         }

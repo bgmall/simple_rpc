@@ -1,4 +1,4 @@
-package simple.net;
+package simple.net.protocol;
 
 public interface Message {
 

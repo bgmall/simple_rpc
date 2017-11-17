@@ -113,4 +113,16 @@ public class RpcClient extends Bootstrap {
     public String getAddress() {
         return this.address;
     }
+
+    public void syncCall() {
+
+    }
+
+    public void asyncCall() {
+
+    }
+
+    public void onewayCall() {
+
+    }
 }

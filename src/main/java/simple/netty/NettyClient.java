@@ -1,4 +1,4 @@
-package simple.net;
+package simple.netty;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -41,7 +41,7 @@ public class NettyClient<M extends Message> extends Bootstrap implements NettySe
     public NettyClient(final NettyClientOptions clientOptions) {
         Class<? extends Channel> channelClass;
         if ("Linux".equals(System.getProperty("os.name"))) {
-            // required lib : netty-transport-native-epoll
+            // required lib : net-transport-native-epoll
             workerGroup = new EpollEventLoopGroup(clientOptions.getWorkThreads());
             channelClass = EpollSocketChannel.class;
         } else {
