@@ -2,9 +2,9 @@ package simple.net.protocol;
 
 public interface ProtocolFactory {
 
-    int getProtocolCode();
+    byte getProtocolCode();
 
-    void encode(Object body);
+    byte[] encode(Message msg);
 
     <T> T decode(int msgId, byte[] data);
 }
