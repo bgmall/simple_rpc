@@ -1,12 +1,12 @@
 package simple.net.protocol;
 
-import simple.net.protocol.annotation.Protocol;
+import simple.net.protocol.annotation.NetProtocol;
 
-public abstract class AnnotationMessage implements Message {
+public abstract class AnnotationNetMessage implements NetMessage {
 
     @Override
     public int getMsgId() {
-        Protocol annotation = this.getClass().getAnnotation(Protocol.class);
+        NetProtocol annotation = this.getClass().getAnnotation(NetProtocol.class);
         if (annotation != null) {
             return annotation.msgId();
         }
@@ -15,7 +15,7 @@ public abstract class AnnotationMessage implements Message {
 
     @Override
     public byte getProtocolCode() {
-        Protocol annotation = this.getClass().getAnnotation(Protocol.class);
+        NetProtocol annotation = this.getClass().getAnnotation(NetProtocol.class);
         if (annotation != null) {
             return annotation.codec();
         }

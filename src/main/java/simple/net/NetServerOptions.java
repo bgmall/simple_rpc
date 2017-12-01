@@ -141,4 +141,7 @@ public class NetServerOptions {
         return maxFrameLength;
     }
 
+    public void setMaxFrameLength(int maxFrameLength) {
+        this.maxFrameLength = maxFrameLength;
+    }
 }

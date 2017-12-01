@@ -1,6 +1,6 @@
 package simple.net.protocol;
 
-public interface Message {
+public interface NetMessage {
 
     int getMsgId();
 

@@ -5,7 +5,7 @@ import java.lang.annotation.*;
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Protocol {
+public @interface NetProtocol {
 
     /**
      * 消息Id

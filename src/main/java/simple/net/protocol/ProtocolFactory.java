@@ -4,7 +4,7 @@ public interface ProtocolFactory {
 
     byte getProtocolCode();
 
-    byte[] encode(Message msg);
+    byte[] encode(NetMessage msg);
 
     <T> T decode(int msgId, byte[] data);
 }

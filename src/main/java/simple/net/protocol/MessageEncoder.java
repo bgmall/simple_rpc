@@ -3,18 +3,19 @@ package simple.net.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import simple.net.manager.ProtocolFactoryManager;
 
-public class MessageEncoder extends MessageToByteEncoder<Message> {
+public class MessageEncoder extends MessageToByteEncoder<NetMessage> {
 
-    private ProtocolFactoryManager protocolFactoryManager;
+    private ProtocolFactorySelector protocolFactorySelector;
 
     public MessageEncoder(ProtocolFactoryManager protocolFactoryManager) {
-        this.protocolFactoryManager = protocolFactoryManager;
+        this.protocolFactorySelector = protocolFactoryManager;
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-        ProtocolFactory protocolFactory = protocolFactoryManager.select(msg.getProtocolCode());
+    protected void encode(ChannelHandlerContext ctx, NetMessage msg, ByteBuf out) throws Exception {
+        ProtocolFactory protocolFactory = protocolFactorySelector.select(msg.getProtocolCode());
         out.writeByte(msg.getProtocolCode());
         out.writeInt(msg.getMsgId());
         byte[] data = protocolFactory.encode(msg);

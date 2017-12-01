@@ -7,18 +7,28 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import simple.rpc.RpcServerOptions;
+import simple.net.manager.ProtocolFactoryManager;
+import simple.net.protocol.MessageDecoder;
+import simple.net.protocol.MessageEncoder;
+import simple.net.protocol.NetMessage;
 import simple.util.NettyUtil;
 
 import java.net.InetSocketAddress;
 
 public class NetServer extends ServerBootstrap {
 
+    private static final String CHANNEL_STATE_AWARE_HANDLER = "channel_state_aware_handler";
+    private static final String CHANNEL_STATE_HANDLER = "channle_state_handler";
+    private static final String MESSAGE_DECODER = "message_decoder";
+    private static final String MESSAGE_ENCODER = "message_encoder";
+    private static final String MESSAGE_HANDLER = "message_handler";
+
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetServer.class);
 
-    private RpcServerOptions serverOptions;
+    private NetServerOptions serverOptions;
     /**
      * The boss group.
      */
@@ -32,7 +42,11 @@ public class NetServer extends ServerBootstrap {
      */
     private Channel channel;
 
-    public NetServer(RpcServerOptions serverOptions) {
+    private ProtocolFactoryManager protocolFactoryManager;
+
+    private SimpleChannelInboundHandler<NetMessage> messageHandler;
+
+    public NetServer(NetServerOptions serverOptions) {
         this.serverOptions = serverOptions;
 
         Class<? extends ServerChannel> serverChannel;
@@ -57,7 +71,7 @@ public class NetServer extends ServerBootstrap {
         this.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, serverOptions.getConnectTimeout());
         this.childOption(ChannelOption.SO_RCVBUF, serverOptions.getReceiveBufferSize());
         this.childOption(ChannelOption.SO_SNDBUF, serverOptions.getSendBufferSize());
-        this.childHandler(new NetServerChannelInitializer(this));
+        this.childHandler(createNetServerChannelInitializer());
     }
 
     public void start(int port) {
@@ -95,11 +109,60 @@ public class NetServer extends ServerBootstrap {
             channel.close();
         }
 
-        bossGroup.shutdownGracefully();
-        workerGroup.shutdownGracefully();
+        if (bossGroup != null) {
+            bossGroup.shutdownGracefully();
+            bossGroup = null;
+        }
+        if (workerGroup != null) {
+            workerGroup.shutdownGracefully();
+            workerGroup = null;
+        }
     }
 
-    public RpcServerOptions getServerOptions() {
+    public NetServerOptions getServerOptions() {
         return serverOptions;
+    }
+
+    public ProtocolFactoryManager getProtocolFactoryManager() {
+        return protocolFactoryManager;
+    }
+
+    public void setProtocolFactoryManager(ProtocolFactoryManager protocolFactoryManager) {
+        this.protocolFactoryManager = protocolFactoryManager;
+    }
+
+    public SimpleChannelInboundHandler<NetMessage> getMessageHandler() {
+        return messageHandler;
+    }
+
+    public void setMessageHandler(SimpleChannelInboundHandler<NetMessage> messageHandler) {
+        this.messageHandler = messageHandler;
+    }
+
+    private ChannelInitializer<Channel> createNetServerChannelInitializer() {
+        return new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel ch) throws Exception {
+                ChannelPipeline pipeline = ch.pipeline();
+
+                if (protocolFactoryManager == null) {
+                    throw new RuntimeException("protocol factory manager is null");
+                }
+
+                pipeline.addFirst(MESSAGE_ENCODER, new MessageEncoder(protocolFactoryManager));
+
+                int idleTimeoutSeconds = getServerOptions().getIdleTimeoutSeconds();
+                pipeline.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, idleTimeoutSeconds, idleTimeoutSeconds));
+                pipeline.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
+
+                if (getMessageHandler() == null) {
+                    throw new RuntimeException("message handler is null");
+                }
+
+                int maxFrameLength = getServerOptions().getMaxFrameLength();
+                pipeline.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength, protocolFactoryManager));
+                pipeline.addLast(MESSAGE_HANDLER, getMessageHandler());
+            }
+        };
     }
 }

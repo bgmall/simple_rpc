@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import simple.net.manager.ProtocolFactoryManager;
 
 import java.util.List;
 
@@ -16,11 +17,11 @@ public class MessageDecoder extends ByteToMessageDecoder {
 
     private int maxFrameLength;
 
-    private ProtocolFactoryManager protocolFactoryManager;
+    private ProtocolFactorySelector protocolFactorSelector;
 
     public MessageDecoder(int maxFrameLength, ProtocolFactoryManager protocolFactoryManager) {
         this.maxFrameLength = maxFrameLength;
-        this.protocolFactoryManager = protocolFactoryManager;
+        this.protocolFactorSelector = protocolFactoryManager;
     }
 
     @Override
@@ -57,7 +58,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             in.readBytes(data);
         }
 
-        ProtocolFactory protocolFactory = protocolFactoryManager.select(codec);
+        ProtocolFactory protocolFactory = protocolFactorSelector.select(codec);
         Object decode = protocolFactory.decode(msgId, data);
         out.add(decode);
 //        Object obj = SerializationUtil.deserialize(data, genericClass);
