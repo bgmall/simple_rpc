@@ -5,7 +5,14 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import simple.net.callback.ClientCallState;
+import simple.net.exception.ConnectionException;
+import simple.net.exception.SendRequestException;
+import simple.net.protocol.CallbackMessage;
+import simple.net.callback.MessageCallback;
 import simple.net.protocol.NetMessage;
+import simple.net.protocol.RetryMessage;
+import simple.rpc.RpcClientCallState;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,7 +47,7 @@ public class NetConnection {
                     NetMessage requestMessage;
                     while (null != (requestMessage = retryRequestQueue.poll())) {
                         logger.debug("retry send msg[{}] to remote address[{}]", requestMessage.getMsgId(), netClient.getRemoteAddress());
-                        writeAndFlush(future.channel(), requestMessage, true);
+                        writeAndFlush(future.channel(), requestMessage);
                     }
                 }
             }
@@ -72,37 +79,52 @@ public class NetConnection {
         }
     }
 
-    private void writeAndFlush(Channel channel, NetMessage message, boolean retry) {
+    private void writeAndFlush(Channel channel, NetMessage message) {
         channel.writeAndFlush(message).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (!future.isSuccess()) {
                     logger.error("send msg[{}] to remote address[{}] exception[{}]", message.getMsgId(), netClient.getRemoteAddress(), future.cause());
-                    if (retry) {
+                    if (message instanceof RetryMessage) {
                         retryRequestQueue.add(message);
+                    } else if (message instanceof CallbackMessage) {
+                        CallbackMessage callbackMessage = (CallbackMessage) message;
+                        ClientCallState callState = netClient.removePendingRequest(callbackMessage.getCallbackId());
+                        if (callState != null) {
+                            callState.handleException(createSendRequestException(message.getMsgId(), future.cause()));
+                        }
                     }
                 }
             }
         });
     }
 
-    void writeAndFlush(NetMessage message, boolean retry) {
+    void writeAndFlush(NetMessage message) {
         Channel channel = this.channel;
         if (invalidChannel(channel)) {
-            if (retry) {
+            if (message instanceof RetryMessage) {
                 retryRequestQueue.add(message);
             }
             return;
         }
 
-        writeAndFlush(channel, message, retry);
+        writeAndFlush(channel, message);
     }
 
     Channel getChannel() {
         return this.channel;
     }
 
-    boolean invalidChannel(Channel channel) {
+    private boolean invalidChannel(Channel channel) {
         return channel == null || !channel.isActive();
     }
+
+    public boolean invalidChannel() {
+        return invalidChannel(this.channel);
+    }
+
+    private SendRequestException createSendRequestException(int msgId, Throwable cause) {
+        return new SendRequestException("send msg[" + msgId + "] to remote address[" + netClient.getRemoteAddress() + "] exception", cause);
+    }
+
 }

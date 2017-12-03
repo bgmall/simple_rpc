@@ -13,6 +13,11 @@ public class NetClientOptions {
     private int connectTimeout;
 
     /**
+     * The reconnect interval in milliseconds
+     */
+    private int reconnectIntervalMills;
+
+    /**
      * The send buffer size.
      */
     private int sendBufferSize;
@@ -61,6 +66,14 @@ public class NetClientOptions {
 
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
+    }
+
+    public int getReconnectIntervalMills() {
+        return reconnectIntervalMills;
+    }
+
+    public void setReconnectIntervalMills(int reconnectIntervalMills) {
+        this.reconnectIntervalMills = reconnectIntervalMills;
     }
 
     public int getSendBufferSize() {

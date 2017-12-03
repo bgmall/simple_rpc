@@ -7,22 +7,44 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
-import simple.net.manager.ProtocolFactoryManager;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.Timer;
+import io.netty.util.TimerTask;
+import io.netty.util.internal.logging.InternalLogger;
+import io.netty.util.internal.logging.InternalLoggerFactory;
+import simple.net.protocol.ProtocolFactoryManager;
+import simple.net.callback.ClientCallState;
+import simple.net.callback.MessageCallback;
+import simple.net.exception.ConnectionException;
+import simple.net.exception.SendTimeoutException;
+import simple.net.protocol.CallbackMessage;
 import simple.net.protocol.MessageDecoder;
 import simple.net.protocol.MessageEncoder;
 import simple.net.protocol.NetMessage;
-import simple.net.protocol.RetryMessage;
 import simple.util.NettyUtil;
 
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class NetClient extends Bootstrap {
+
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetClient.class);
 
     private static final String CHANNEL_STATE_AWARE_HANDLER = "channel_state_aware_handler";
     private static final String CHANNEL_STATE_HANDLER = "channle_state_handler";
     private static final String MESSAGE_DECODER = "message_decoder";
     private static final String MESSAGE_ENCODER = "message_encoder";
     private static final String MESSAGE_HANDLER = "message_handler";
+
+    /**
+     * Tick count of each wheel instance for timer.
+     */
+    private static final int DEFAULT_TICKS_PER_WHEEL = 2048;
+    /**
+     * Tick duration for timer.
+     */
+    private static final int DEFAULT_TICK_DURATION = 100;
 
     private EventLoopGroup workerGroup;
 
@@ -34,7 +56,23 @@ public class NetClient extends Bootstrap {
 
     private SimpleChannelInboundHandler<NetMessage> messageHandler;
 
-    private NetConnection connection = new NetConnection(this);
+    private ChannelPool channelPool;
+
+    private AtomicLong correlationId = new AtomicLong(1);
+
+    private final ConcurrentMap<Long, ClientCallState> requestMap = new ConcurrentHashMap<>();
+
+    private static Timer timer = createTimer(); // 初始化定时器
+
+    private static Timer createTimer() {
+        Timer timer = new HashedWheelTimer(Executors.defaultThreadFactory(), DEFAULT_TICK_DURATION,
+                TimeUnit.MILLISECONDS, DEFAULT_TICKS_PER_WHEEL);
+        return timer;
+    }
+
+    public Timer getTimer() {
+        return timer;
+    }
 
     public static EventLoopGroup createWorkerGroup(int eventLoopThreads, ThreadFactory threadFactory) {
         if (NettyUtil.isLinuxPlatform()) {
@@ -81,6 +119,10 @@ public class NetClient extends Bootstrap {
         this.option(ChannelOption.SO_KEEPALIVE, clientOptions.isKeepAlive());
         this.option(ChannelOption.TCP_NODELAY, clientOptions.isTcpNoDelay());
         this.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, clientOptions.getConnectTimeout());
+
+        if (channelPool == null) {
+            channelPool = new SingleChannelPool(this);
+        }
     }
 
     public void shutdown() {
@@ -88,6 +130,21 @@ public class NetClient extends Bootstrap {
             this.workerGroup.shutdownGracefully();
             this.workerGroup = null;
         }
+    }
+
+    public long getNextCorrelationId() {
+        return correlationId.getAndIncrement();
+    }
+
+    public ClientCallState removePendingRequest(long seqId) {
+        return requestMap.remove(seqId);
+    }
+
+    public void registerPendingRequest(long seqId, ClientCallState state) {
+        if (requestMap.containsKey(seqId)) {
+            throw new IllegalArgumentException("State already registered");
+        }
+        requestMap.put(seqId, state);
     }
 
     public NetClientOptions getClientOptions() {
@@ -112,6 +169,14 @@ public class NetClient extends Bootstrap {
 
     public void setMessageHandler(SimpleChannelInboundHandler<NetMessage> messageHandler) {
         this.messageHandler = messageHandler;
+    }
+
+    public ChannelPool getChannelPool() {
+        return channelPool;
+    }
+
+    public void setChannelPool(ChannelPool channelPool) {
+        this.channelPool = channelPool;
     }
 
     private ChannelInitializer<Channel> createNetClientChannelInitializer() {
@@ -141,19 +206,56 @@ public class NetClient extends Bootstrap {
     }
 
     public void sendMessage(NetMessage message) {
-        boolean retry = message instanceof RetryMessage;
-        connection.writeAndFlush(message, retry);
+        NetConnection connection = channelPool.choose(message);
+        connection.writeAndFlush(message);
     }
 
-    public boolean isConnected() {
-        return !connection.invalidChannel(connection.getChannel());
-    }
-
-    public boolean tryToConnect() {
-        if (!isConnected()) {
-            Channel channel = connection.connect();
-            return connection.invalidChannel(channel);
+    public void sendMessage(NetMessage message, MessageCallback callback) {
+        if (!(message instanceof CallbackMessage)) {
+            if (callback != null) {
+                callback.exceptionCaught(new IllegalArgumentException("message must be callbackMessage"));
+            }
+            return;
         }
-        return true;
+        NetConnection connection = channelPool.choose(message);
+        if (connection.invalidChannel()) {
+            if (callback != null) {
+                callback.exceptionCaught(createConnectionException());;
+            }
+            return;
+        }
+
+        CallbackMessage callbackMessage = (CallbackMessage) message;
+        long nextCorrelationId = getNextCorrelationId();
+        ClientCallState clientCallState = new ClientCallState();
+        clientCallState.setCallback(callback);
+        clientCallState.setCallbackId(nextCorrelationId);
+        if (callbackMessage.getTimeoutMills() > 0) {
+            Timeout timeout = createTimeout(clientCallState, callbackMessage.getTimeoutMills(), message.getMsgId());
+            clientCallState.setTimeout(timeout);
+        }
+        registerPendingRequest(nextCorrelationId, clientCallState);
+        connection.writeAndFlush(message);
+    }
+
+    private Timeout createTimeout(ClientCallState clientCallState, long timeoutMills, int msgId) {
+        return getTimer().newTimeout(new TimerTask() {
+            @Override
+            public void run(Timeout timeout) throws Exception {
+                ClientCallState callState = removePendingRequest(clientCallState.getCallbackId());
+                if (callState != null) {
+                    logger.error("send msg[{}] to remote address[{}] timeout", msgId, getRemoteAddress());
+                    clientCallState.handleException(createSendTimeoutException(msgId));
+                }
+            }
+        }, timeoutMills, TimeUnit.MILLISECONDS);
+    }
+
+    private SendTimeoutException createSendTimeoutException(int msgId) {
+        return new SendTimeoutException("send msg[" + msgId + "] to remote address[" + getRemoteAddress() + "] timeout");
+    }
+
+    private ConnectionException createConnectionException() {
+        return new ConnectionException("channel to remote address[" + getRemoteAddress() + "] is closed");
     }
 }

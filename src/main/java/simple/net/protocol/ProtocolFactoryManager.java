@@ -1,4 +1,4 @@
-package simple.net.manager;
+package simple.net.protocol;
 
 import simple.net.protocol.ProtocolFactory;
 import simple.net.protocol.ProtocolFactorySelector;

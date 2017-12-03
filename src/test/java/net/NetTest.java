@@ -6,7 +6,6 @@ import org.junit.Test;
 import simple.net.NetClientOptions;
 import simple.net.NetServer;
 import simple.net.NetServerOptions;
-import simple.net.manager.NetClientManager;
 
 public class NetTest {
 

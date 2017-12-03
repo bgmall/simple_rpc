@@ -3,7 +3,6 @@ package simple.net.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import simple.net.manager.ProtocolFactoryManager;
 
 public class MessageEncoder extends MessageToByteEncoder<NetMessage> {
 

@@ -10,7 +10,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import simple.net.manager.ProtocolFactoryManager;
+import simple.net.protocol.ProtocolFactoryManager;
 import simple.net.protocol.MessageDecoder;
 import simple.net.protocol.MessageEncoder;
 import simple.net.protocol.NetMessage;
