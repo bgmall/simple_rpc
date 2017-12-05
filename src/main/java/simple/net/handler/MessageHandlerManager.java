@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class MessageHandlerManager {
 
-    private Map<Integer, MessageHandler> msgIdToHandler = new HashMap<>();
+    private Map<Integer, MessageHandlerDesc> msgIdToHandler = new HashMap<>();
 
     public void register(Class<?> handlerClass) {
         Method[] declaredMethods = handlerClass.getDeclaredMethods();
@@ -20,7 +20,7 @@ public class MessageHandlerManager {
                     throw new RuntimeException();
                 }
 
-                MessageHandler messageHandler = new MessageHandler();
+                MessageHandlerDesc messageHandler = new MessageHandlerDesc();
                 messageHandler.handlerClass = handlerClass;
                 messageHandler.method = method;
                 messageHandler.paramClass = method.getParameterTypes();
@@ -31,16 +31,8 @@ public class MessageHandlerManager {
         }
     }
 
-    public MessageHandler getMessageHandler(int msgId) {
+    public MessageHandlerDesc getMessageHandler(int msgId) {
         return msgIdToHandler.get(msgId);
     }
 
-    public static class MessageHandler {
-
-        public Class<?> handlerClass;
-
-        public Method method;
-
-        public Class<?>[] paramClass;
-    }
 }

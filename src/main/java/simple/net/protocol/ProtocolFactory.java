@@ -6,5 +6,5 @@ public interface ProtocolFactory {
 
     byte[] encode(NetMessage msg);
 
-    <T> T decode(int msgId, byte[] data);
+    Object decode(int msgId, byte[] data);
 }

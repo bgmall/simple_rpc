@@ -1,8 +1,22 @@
 package simple.net.protocol;
 
+import simple.net.protocol.annotation.NetProtocol;
+
 public interface NetMessage {
 
-    int getMsgId();
+    default int getMsgId() {
+        NetProtocol annotation = this.getClass().getAnnotation(NetProtocol.class);
+        if (annotation != null) {
+            return annotation.msgId();
+        }
+        return 0;
+    }
 
-    byte getProtocolCode();
+    default byte getProtocolCode() {
+        NetProtocol annotation = this.getClass().getAnnotation(NetProtocol.class);
+        if (annotation != null) {
+            return annotation.codec();
+        }
+        return 0;
+    }
 }

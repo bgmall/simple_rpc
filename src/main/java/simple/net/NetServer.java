@@ -8,12 +8,13 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import simple.net.protocol.ProtocolFactoryManager;
 import simple.net.protocol.MessageDecoder;
 import simple.net.protocol.MessageEncoder;
 import simple.net.protocol.NetMessage;
+import simple.net.protocol.ProtocolFactoryManager;
 import simple.util.NettyUtil;
 
 import java.net.InetSocketAddress;
@@ -51,12 +52,12 @@ public class NetServer extends ServerBootstrap {
 
         Class<? extends ServerChannel> serverChannel;
         if (NettyUtil.isLinuxPlatform()) {
-            this.bossGroup = new EpollEventLoopGroup(serverOptions.getAcceptorThreads());
-            this.workerGroup = new EpollEventLoopGroup(serverOptions.getWorkThreads());
+            this.bossGroup = new EpollEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorThread"));
+            this.workerGroup = new EpollEventLoopGroup(serverOptions.getWorkThreads(), new DefaultThreadFactory("NetServerWorkerThread"));
             serverChannel = EpollServerSocketChannel.class;
         } else {
-            this.bossGroup = new NioEventLoopGroup(serverOptions.getAcceptorThreads());
-            this.workerGroup = new NioEventLoopGroup(serverOptions.getWorkThreads());
+            this.bossGroup = new NioEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorThread"));
+            this.workerGroup = new NioEventLoopGroup(serverOptions.getWorkThreads(), new DefaultThreadFactory("NetServerWorkerThread"));
             serverChannel = NioServerSocketChannel.class;
         }
 
@@ -72,6 +73,10 @@ public class NetServer extends ServerBootstrap {
         this.childOption(ChannelOption.SO_RCVBUF, serverOptions.getReceiveBufferSize());
         this.childOption(ChannelOption.SO_SNDBUF, serverOptions.getSendBufferSize());
         this.childHandler(createNetServerChannelInitializer());
+    }
+
+    public void start() {
+        start(serverOptions.getListenPort());
     }
 
     public void start(int port) {

@@ -13,15 +13,11 @@ import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import simple.net.protocol.ProtocolFactoryManager;
 import simple.net.callback.ClientCallState;
 import simple.net.callback.MessageCallback;
 import simple.net.exception.ConnectionException;
 import simple.net.exception.SendTimeoutException;
-import simple.net.protocol.CallbackMessage;
-import simple.net.protocol.MessageDecoder;
-import simple.net.protocol.MessageEncoder;
-import simple.net.protocol.NetMessage;
+import simple.net.protocol.*;
 import simple.util.NettyUtil;
 
 import java.util.concurrent.*;
@@ -35,6 +31,7 @@ public class NetClient extends Bootstrap {
     private static final String CHANNEL_STATE_HANDLER = "channle_state_handler";
     private static final String MESSAGE_DECODER = "message_decoder";
     private static final String MESSAGE_ENCODER = "message_encoder";
+    private static final String MESSAGE_CALLBACK_HANDLER = "message_callback_handler";
     private static final String MESSAGE_HANDLER = "message_handler";
 
     /**
@@ -130,6 +127,10 @@ public class NetClient extends Bootstrap {
             this.workerGroup.shutdownGracefully();
             this.workerGroup = null;
         }
+        if (channelPool != null) {
+            channelPool.close();
+            channelPool = null;
+        }
     }
 
     public long getNextCorrelationId() {
@@ -194,11 +195,12 @@ public class NetClient extends Bootstrap {
                 int idleTimeoutSeconds = getClientOptions().getIdleTimeoutSeconds();
                 channelPipe.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, idleTimeoutSeconds, idleTimeoutSeconds));
                 channelPipe.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
+                int maxFrameLength = getClientOptions().getMaxFrameLength();
+                channelPipe.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength, protocolFactoryManager));
+                channelPipe.addLast(MESSAGE_CALLBACK_HANDLER, new NetClientCallbackHandler(NetClient.this));
 
                 // 这边假设client可以不监听message，统一由server监听处理
                 if (getMessageHandler() != null) {
-                    int maxFrameLength = getClientOptions().getMaxFrameLength();
-                    channelPipe.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength, protocolFactoryManager));
                     channelPipe.addLast(MESSAGE_HANDLER, getMessageHandler());
                 }
             }

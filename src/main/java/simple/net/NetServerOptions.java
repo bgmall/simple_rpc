@@ -3,6 +3,11 @@ package simple.net;
 public class NetServerOptions {
 
     /**
+     * listen port of the server
+     */
+    private int listenPort;
+
+    /**
      * backlog.
      */
     private int backlog;
@@ -56,6 +61,14 @@ public class NetServerOptions {
      * The event loop thread pool size.
      */
     private int workThreads = 20;
+
+    public int getListenPort() {
+        return listenPort;
+    }
+
+    public void setListenPort(int listenPort) {
+        this.listenPort = listenPort;
+    }
 
     public int getBacklog() {
         return backlog;
