@@ -4,14 +4,14 @@ import java.lang.reflect.Method;
 
 public class MessageHandlerDesc {
 
-    Class<?> handlerClass;
+    Object handler;
 
     Method method;
 
     Class<?>[] paramClass;
 
-    public Class<?> getHandlerClass() {
-        return handlerClass;
+    public Object getHandler() {
+        return handler;
     }
 
     public Method getMethod() {

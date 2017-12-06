@@ -5,6 +5,7 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
@@ -36,6 +37,9 @@ public class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> 
 
     @Autowired
     private ConfigurableListableBeanFactory factory;
+
+    @Autowired
+    private ApplicationContext context;
 
     public void start() {
         if (messageDispatcher == null) {
@@ -78,7 +82,7 @@ public class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> 
                     } else {
                         NetMessageHandler annotation = beanClass.getAnnotation(NetMessageHandler.class);
                         if (annotation != null) {
-                            messageHandlerManager.register(beanClass);
+                            messageHandlerManager.register(context.getBean(beanClass));
                         }
                     }
                 } catch (ClassNotFoundException e) {

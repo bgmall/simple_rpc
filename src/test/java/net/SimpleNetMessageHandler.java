@@ -10,7 +10,7 @@ public class SimpleNetMessageHandler {
 
     @NetMessageInvoke(msgId = 1)
     public void handleSimpleMessage(SimpleNetMessage message) {
-        System.out.println(message);
+        System.out.println(message.getMsg());
     }
 
 }

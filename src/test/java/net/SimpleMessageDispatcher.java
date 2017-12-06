@@ -15,7 +15,7 @@ public class SimpleMessageDispatcher implements MessageDispatcher {
         Method method = messageHandlerDesc.getMethod();
         try {
             Object[] objects = convertParams(messageHandlerDesc, message);
-            method.invoke(messageHandlerDesc.getHandlerClass(), objects);
+            method.invoke(messageHandlerDesc.getHandler(), objects);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -31,7 +31,6 @@ public class SimpleMessageDispatcher implements MessageDispatcher {
             if (clazz == null) {
                 continue;
             }
-            System.out.println(clazz);
             if (NetMessage.class.isAssignableFrom(clazz)) {
                 params[i] = message;
             }

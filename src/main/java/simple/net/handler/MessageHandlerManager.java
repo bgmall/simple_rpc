@@ -10,7 +10,8 @@ public class MessageHandlerManager {
 
     private Map<Integer, MessageHandlerDesc> msgIdToHandler = new HashMap<>();
 
-    public void register(Class<?> handlerClass) {
+    public void register(Object handler) {
+        Class<?> handlerClass = handler.getClass();
         Method[] declaredMethods = handlerClass.getDeclaredMethods();
         for (Method method : declaredMethods) {
             NetMessageInvoke annotation = method.getAnnotation(NetMessageInvoke.class);
@@ -21,7 +22,7 @@ public class MessageHandlerManager {
                 }
 
                 MessageHandlerDesc messageHandler = new MessageHandlerDesc();
-                messageHandler.handlerClass = handlerClass;
+                messageHandler.handler = handler;
                 messageHandler.method = method;
                 messageHandler.paramClass = method.getParameterTypes();
                 if (msgIdToHandler.putIfAbsent(msgId, messageHandler) != null) {
