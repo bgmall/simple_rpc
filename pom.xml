@@ -5,13 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sample</groupId>
-    <artifactId>simple_rpc</artifactId>
+    <artifactId>simple_net</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
         <netty.version>4.1.15.Final</netty.version>
         <junit.version>4.12</junit.version>
         <spring.version>4.3.13.RELEASE</spring.version>
+        <protostuff.version>1.0.8</protostuff.version>
     </properties>
 
     <dependencies>
@@ -23,12 +24,12 @@
         <dependency>
             <groupId>com.dyuproject.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
-            <version>1.0.8</version>
+            <version>${protostuff.version}</version>
         </dependency>
         <dependency>
             <groupId>com.dyuproject.protostuff</groupId>
             <artifactId>protostuff-runtime</artifactId>
-            <version>1.0.8</version>
+            <version>${protostuff.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>

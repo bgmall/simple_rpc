@@ -1,10 +1,8 @@
 package net;
 
-import org.springframework.stereotype.Component;
 import simple.net.handler.annotation.NetMessageHandler;
 import simple.net.handler.annotation.NetMessageInvoke;
 
-@Component
 @NetMessageHandler
 public class SimpleNetMessageHandler {
 
