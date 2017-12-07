@@ -1,14 +1,14 @@
 package net;
 
-import org.springframework.stereotype.Component;
 import simple.net.handler.MessageDispatcher;
 import simple.net.handler.MessageHandlerDesc;
+import simple.net.handler.annotation.NetMessageDispatcher;
 import simple.net.protocol.NetMessage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-@Component
+@NetMessageDispatcher
 public class SimpleMessageDispatcher implements MessageDispatcher {
     @Override
     public void dispatch(NetMessage message, MessageHandlerDesc messageHandlerDesc) {
