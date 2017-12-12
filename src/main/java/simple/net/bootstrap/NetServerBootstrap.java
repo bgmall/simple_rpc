@@ -1,6 +1,7 @@
 package simple.net.bootstrap;
 
-import io.netty.util.concurrent.DefaultThreadFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import simple.net.NetMessageHandler;
 import simple.net.NetServer;
 import simple.net.NetServerOptions;
@@ -10,17 +11,9 @@ import simple.net.protocol.ProtocolFactoryManager;
 import simple.util.PropsUtil;
 
 import java.util.Properties;
-import java.util.concurrent.ThreadFactory;
 
+@Component
 public class NetServerBootstrap {
-
-    private int ioThreadPoolSize;
-
-    private ThreadFactory ioThreadFactory;
-
-    private ProtocolFactoryManager protocolFactoryManager;
-
-    private MessageHandlerManager messageHandlerManager;
 
     private MessageDispatcher messageDispatcher;
 
@@ -28,65 +21,41 @@ public class NetServerBootstrap {
 
     private NetServer netServer;
 
-    public NetServerBootstrap() {
-        this(0);
-    }
-
-    public NetServerBootstrap(int ioThreadPoolSize) {
-        this(ioThreadPoolSize, new DefaultThreadFactory("NetServerIoThread"));
-    }
-
-    public NetServerBootstrap(int ioThreadPoolSize, ThreadFactory ioThreadFactory) {
-        this.ioThreadPoolSize = ioThreadPoolSize;
-        this.ioThreadFactory = ioThreadFactory;
-    }
+    @Autowired
+    private NetBootstrap netBootstrap;
 
     public void start() {
-        if (protocolFactoryManager == null) {
-            throw new RuntimeException("protocol factory manager is null");
+        netBootstrap.start();
+
+        if (getProtocolFactoryManager().isEmpty()) {
+            throw new RuntimeException("protocol factory manager is empty, need register protocol factory!!!");
         }
         if (messageDispatcher == null) {
             throw new RuntimeException("message dispatcher is null");
         }
-        if (messageHandlerManager == null) {
-            throw new RuntimeException("message handler manager is null");
-        }
 
         initServerOptions();
 
-        if (ioThreadPoolSize == 0) {
-            ioThreadPoolSize = serverOptions.getWorkThreads();
-            if (ioThreadPoolSize == 0) {
-                ioThreadPoolSize = Runtime.getRuntime().availableProcessors();
-            }
-        }
-
         netServer = new NetServer(serverOptions);
-        netServer.setProtocolFactoryManager(protocolFactoryManager);
-        netServer.setMessageHandler(new NetMessageHandler(messageHandlerManager, messageDispatcher));
+        netServer.setProtocolFactoryManager(getProtocolFactoryManager());
+        netServer.setMessageHandler(new NetMessageHandler(getMessageHandlerManager(), messageDispatcher));
         netServer.start();
     }
 
     public void shutdown() {
+        netBootstrap.shutdown();
+
         if (netServer != null) {
             netServer.shutdown();
         }
     }
 
     public ProtocolFactoryManager getProtocolFactoryManager() {
-        return protocolFactoryManager;
+        return netBootstrap.getProtocolFactoryManager();
     }
 
-    public void setProtocolFactoryManager(ProtocolFactoryManager protocolFactoryManager) {
-        this.protocolFactoryManager = protocolFactoryManager;
-    }
-
-    public MessageHandlerManager getMessageHandlerManager() {
-        return messageHandlerManager;
-    }
-
-    public void setMessageHandlerManager(MessageHandlerManager messageHandlerManager) {
-        this.messageHandlerManager = messageHandlerManager;
+    private MessageHandlerManager getMessageHandlerManager() {
+        return netBootstrap.getMessageHandlerManager();
     }
 
     public MessageDispatcher getMessageDispatcher() {

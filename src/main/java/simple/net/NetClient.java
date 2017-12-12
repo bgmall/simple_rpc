@@ -11,6 +11,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import simple.net.callback.ClientCallState;
@@ -20,7 +21,11 @@ import simple.net.exception.SendTimeoutException;
 import simple.net.protocol.*;
 import simple.util.NettyUtil;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class NetClient extends Bootstrap {
@@ -59,7 +64,9 @@ public class NetClient extends Bootstrap {
 
     private final ConcurrentMap<Long, ClientCallState> requestMap = new ConcurrentHashMap<>();
 
-    private static Timer timer = createTimer(); // 初始化定时器
+    private static Timer timer;
+
+    private static final AtomicInteger INSTANCE_COUNT = new AtomicInteger();
 
     private static Timer createTimer() {
         Timer timer = new HashedWheelTimer(Executors.defaultThreadFactory(), DEFAULT_TICK_DURATION,
@@ -71,19 +78,11 @@ public class NetClient extends Bootstrap {
         return timer;
     }
 
-    public static EventLoopGroup createWorkerGroup(int eventLoopThreads, ThreadFactory threadFactory) {
+    private static EventLoopGroup createWorkerGroup(int eventLoopThreads) {
         if (NettyUtil.isLinuxPlatform()) {
-            if (threadFactory != null) {
-                return new EpollEventLoopGroup(eventLoopThreads, threadFactory);
-            } else {
-                return new EpollEventLoopGroup(eventLoopThreads);
-            }
+            return new EpollEventLoopGroup(eventLoopThreads, new DefaultThreadFactory("NetClientWorkerIoThread"));
         } else {
-            if (threadFactory != null) {
-                return new NioEventLoopGroup(eventLoopThreads, threadFactory);
-            } else {
-                return new NioEventLoopGroup(eventLoopThreads);
-            }
+            return new NioEventLoopGroup(eventLoopThreads, new DefaultThreadFactory("NetClientWorkerIoThread"));
         }
     }
 
@@ -94,12 +93,16 @@ public class NetClient extends Bootstrap {
     }
 
     public void start() {
-        EventLoopGroup workerGroup = createWorkerGroup(clientOptions.getEventLoopThreads(), null);
-        this.workerGroup = workerGroup;
-        start(workerGroup);
-    }
+        // first client
+        if (INSTANCE_COUNT.incrementAndGet() == 1) {
+            if (timer == null) {
+                timer = createTimer();
+            }
+            if (workerGroup == null) {
+                workerGroup = createWorkerGroup(clientOptions.getEventLoopThreads());
+            }
+        }
 
-    public void start(EventLoopGroup workerGroup) {
         Class<? extends Channel> channelClass;
         if (workerGroup instanceof EpollEventLoopGroup) {
             channelClass = EpollSocketChannel.class;
@@ -123,13 +126,20 @@ public class NetClient extends Bootstrap {
     }
 
     public void shutdown() {
-        if (this.workerGroup != null) {
-            this.workerGroup.shutdownGracefully();
-            this.workerGroup = null;
-        }
         if (channelPool != null) {
             channelPool.close();
             channelPool = null;
+        }
+        // to check instance count
+        if (INSTANCE_COUNT.decrementAndGet() == 0) {
+            if (timer != null) {
+                timer.stop();
+                timer = null;
+            }
+            if (workerGroup != null) {
+                workerGroup.shutdownGracefully();
+                workerGroup = null;
+            }
         }
     }
 
@@ -222,7 +232,8 @@ public class NetClient extends Bootstrap {
         NetConnection connection = channelPool.choose(message);
         if (connection.invalidChannel()) {
             if (callback != null) {
-                callback.exceptionCaught(createConnectionException());;
+                callback.exceptionCaught(createConnectionException());
+                ;
             }
             return;
         }

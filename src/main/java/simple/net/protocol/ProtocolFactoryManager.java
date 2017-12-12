@@ -1,8 +1,5 @@
 package simple.net.protocol;
 
-import simple.net.protocol.ProtocolFactory;
-import simple.net.protocol.ProtocolFactorySelector;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,5 +18,9 @@ public class ProtocolFactoryManager implements ProtocolFactorySelector {
     @Override
     public ProtocolFactory select(byte protocolCode) {
         return protocolCodeToFactory.get(protocolCode);
+    }
+
+    public boolean isEmpty() {
+        return protocolCodeToFactory.isEmpty();
     }
 }

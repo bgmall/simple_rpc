@@ -1,7 +1,8 @@
 package simple.net.bootstrap;
 
 import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.DefaultThreadFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import simple.net.NetClient;
 import simple.net.NetClientOptions;
 import simple.net.protocol.ProtocolFactoryManager;
@@ -15,6 +16,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Created by Administrator on 2017/12/2.
  */
+@Component
 public class NetClientBootstrap {
 
     private final ConcurrentMap<Integer, NetClient> serverIdToClient = new ConcurrentHashMap<>();
@@ -25,37 +27,24 @@ public class NetClientBootstrap {
 
     private ThreadFactory ioThreadFactory;
 
-    private ProtocolFactoryManager protocolFactoryManager;
-
     private NetClientOptions clientOptions;
 
-    public NetClientBootstrap() {
-        this(0);
-    }
-
-    public NetClientBootstrap(int ioThreadPoolSize) {
-        this(ioThreadPoolSize, new DefaultThreadFactory("NetClientIoThread"));
-    }
-
-    public NetClientBootstrap(int ioThreadPoolSize, ThreadFactory ioThreadFactory) {
-        this.ioThreadPoolSize = ioThreadPoolSize;
-        this.ioThreadFactory = ioThreadFactory;
-    }
+    @Autowired
+    private NetBootstrap netBootstrap;
 
     public void start() {
-        if (protocolFactoryManager == null) {
-            throw new RuntimeException("protocol factory manager is null");
+        netBootstrap.start();
+
+        if (getProtocolFactoryManager().isEmpty()) {
+            throw new RuntimeException("protocol factory manager is empty, need register protocol factory!!!");
         }
 
         initClientOptions();
-
-        if (this.ioThreadPoolSize == 0) {
-            this.ioThreadPoolSize = clientOptions.getEventLoopThreads();
-        }
-        clientEventGroup = NetClient.createWorkerGroup(this.ioThreadPoolSize, this.ioThreadFactory);
     }
 
     public void shutdown() {
+        netBootstrap.shutdown();
+
         if (clientEventGroup != null) {
             clientEventGroup.shutdownGracefully();
             clientEventGroup = null;
@@ -65,11 +54,7 @@ public class NetClientBootstrap {
     }
 
     public ProtocolFactoryManager getProtocolFactoryManager() {
-        return protocolFactoryManager;
-    }
-
-    public void setProtocolFactoryManager(ProtocolFactoryManager protocolFactoryManager) {
-        this.protocolFactoryManager = protocolFactoryManager;
+        return netBootstrap.getProtocolFactoryManager();
     }
 
     public NetClient createNetClient(int serverId, String host, int port) {
@@ -79,8 +64,8 @@ public class NetClientBootstrap {
             return oldNetClient;
         }
 
-        netClient.setProtocolFactoryManager(protocolFactoryManager);
-        netClient.start(clientEventGroup);
+        netClient.setProtocolFactoryManager(getProtocolFactoryManager());
+        netClient.start();
         return netClient;
     }
 

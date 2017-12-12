@@ -49,15 +49,17 @@ public class NetServer extends ServerBootstrap {
 
     public NetServer(NetServerOptions serverOptions) {
         this.serverOptions = serverOptions;
+    }
 
+    public void start() {
         Class<? extends ServerChannel> serverChannel;
         if (NettyUtil.isLinuxPlatform()) {
-            this.bossGroup = new EpollEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorThread"));
-            this.workerGroup = new EpollEventLoopGroup(serverOptions.getWorkThreads(), new DefaultThreadFactory("NetServerWorkerThread"));
+            this.bossGroup = new EpollEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorIoThread"));
+            this.workerGroup = new EpollEventLoopGroup(serverOptions.getWorkThreads(), new DefaultThreadFactory("NetServerWorkerIoThread"));
             serverChannel = EpollServerSocketChannel.class;
         } else {
-            this.bossGroup = new NioEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorThread"));
-            this.workerGroup = new NioEventLoopGroup(serverOptions.getWorkThreads(), new DefaultThreadFactory("NetServerWorkerThread"));
+            this.bossGroup = new NioEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorIoThread"));
+            this.workerGroup = new NioEventLoopGroup(serverOptions.getWorkThreads(), new DefaultThreadFactory("NetServerWorkerIoThread"));
             serverChannel = NioServerSocketChannel.class;
         }
 
@@ -73,13 +75,11 @@ public class NetServer extends ServerBootstrap {
         this.childOption(ChannelOption.SO_RCVBUF, serverOptions.getReceiveBufferSize());
         this.childOption(ChannelOption.SO_SNDBUF, serverOptions.getSendBufferSize());
         this.childHandler(createNetServerChannelInitializer());
+
+        listen(serverOptions.getListenPort());
     }
 
-    public void start() {
-        start(serverOptions.getListenPort());
-    }
-
-    public void start(int port) {
+    private void listen(int port) {
         InetSocketAddress inetSocketAddress = new InetSocketAddress(port);
         try {
             ChannelFuture channelFuture = this.bind(inetSocketAddress).sync();
@@ -91,22 +91,6 @@ public class NetServer extends ServerBootstrap {
             shutdown();
             throw new RuntimeException(e.getMessage(), e);
         }
-    }
-
-    public void startAsync(int port) {
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(port);
-        this.bind(inetSocketAddress).addListener(new ChannelFutureListener() {
-
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (future.isSuccess()) {
-                    channel = future.channel();
-                    logger.info("server address[{}] started", channel);
-                } else {
-                    shutdown();
-                    throw new Exception("bind port failed:" + inetSocketAddress.toString() + " message:" + future.toString());
-                }
-            }
-        });
     }
 
     public void shutdown() {

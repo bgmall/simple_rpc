@@ -23,6 +23,24 @@ public class NetMessageHandler extends SimpleChannelInboundHandler<NetMessage> {
     }
 
     @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        super.channelActive(ctx);
+        messageDispatcher.channelOpened(ctx.channel());
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        messageDispatcher.channelClosed(ctx.channel());
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        super.exceptionCaught(ctx, cause);
+        messageDispatcher.exceptionCaught(ctx.channel(), cause);
+    }
+
+    @Override
     protected void channelRead0(ChannelHandlerContext ctx, NetMessage msg) throws Exception {
         MessageHandlerDesc messageHandlerDesc = messageHandlerManager.getMessageHandler(msg.getMsgId());
         if (messageHandlerDesc == null) {
@@ -30,6 +48,6 @@ public class NetMessageHandler extends SimpleChannelInboundHandler<NetMessage> {
             return;
         }
 
-        messageDispatcher.dispatch(msg, messageHandlerDesc);
+        messageDispatcher.messageReceived(ctx.channel(), msg, messageHandlerDesc);
     }
 }

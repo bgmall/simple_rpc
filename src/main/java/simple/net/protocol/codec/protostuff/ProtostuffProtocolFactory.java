@@ -8,6 +8,8 @@ import java.util.Collection;
 
 public class ProtostuffProtocolFactory implements ProtocolFactory {
 
+    public static final byte PROTOCOL_CODE_ID = 1;
+
     private MessageManager messageManager;
 
     public ProtostuffProtocolFactory(MessageManager messageManager) {
@@ -17,7 +19,7 @@ public class ProtostuffProtocolFactory implements ProtocolFactory {
 
     @Override
     public byte getProtocolCode() {
-        return 1;
+        return PROTOCOL_CODE_ID;
     }
 
     @Override

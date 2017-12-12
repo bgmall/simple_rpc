@@ -9,7 +9,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
-import simple.net.handler.MessageDispatcher;
 import simple.net.handler.MessageHandlerManager;
 import simple.net.handler.annotation.NetMessageHandler;
 import simple.net.protocol.MessageManager;
@@ -18,7 +17,7 @@ import simple.net.protocol.ProtocolFactoryManager;
 import simple.net.protocol.codec.protostuff.ProtostuffProtocolFactory;
 
 @Component
-public class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> {
+class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetBootstrap.class);
 
@@ -28,13 +27,6 @@ public class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> 
 
     private ProtocolFactoryManager protocolFactoryManager = new ProtocolFactoryManager();
 
-    private NetClientBootstrap netClientBootstrap;
-
-    private NetServerBootstrap netServerBootstrap;
-
-    @Autowired
-    private MessageDispatcher messageDispatcher;
-
     @Autowired
     private ConfigurableListableBeanFactory factory;
 
@@ -42,30 +34,14 @@ public class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> 
     private ApplicationContext context;
 
     public void start() {
-        if (messageDispatcher == null) {
-            throw new IllegalStateException("message dispatcher don't set");
+        // 注册默认的编解码factory: protostuff
+        if (protocolFactoryManager.isEmpty()) {
+            protocolFactoryManager.register(new ProtostuffProtocolFactory(messageManager));
         }
-        protocolFactoryManager.register(new ProtostuffProtocolFactory(messageManager));
-        netClientBootstrap = new NetClientBootstrap();
-        netClientBootstrap.setProtocolFactoryManager(protocolFactoryManager);
-        netClientBootstrap.start();
-
-        netServerBootstrap = new NetServerBootstrap();
-        netServerBootstrap.setProtocolFactoryManager(protocolFactoryManager);
-        netServerBootstrap.setMessageDispatcher(messageDispatcher);
-        netServerBootstrap.setMessageHandlerManager(messageHandlerManager);
-        netServerBootstrap.start();
     }
 
     public void shutdown() {
-        if (netClientBootstrap != null) {
-            netClientBootstrap.shutdown();
-            netClientBootstrap = null;
-        }
-        if (netServerBootstrap != null) {
-            netServerBootstrap.shutdown();
-            netServerBootstrap = null;
-        }
+
     }
 
     @Override
@@ -96,7 +72,7 @@ public class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> 
         return protocolFactoryManager;
     }
 
-    public NetClientBootstrap getNetClientBootstrap() {
-        return netClientBootstrap;
+    public MessageHandlerManager getMessageHandlerManager() {
+        return messageHandlerManager;
     }
 }

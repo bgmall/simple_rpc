@@ -12,7 +12,7 @@
         <netty.version>4.1.15.Final</netty.version>
         <junit.version>4.12</junit.version>
         <spring.version>4.3.13.RELEASE</spring.version>
-        <protostuff.version>1.0.8</protostuff.version>
+        <protostuff.version>1.5.2</protostuff.version>
     </properties>
 
     <dependencies>
@@ -22,12 +22,12 @@
             <version>2.1</version>
         </dependency>
         <dependency>
-            <groupId>com.dyuproject.protostuff</groupId>
+            <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
             <version>${protostuff.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.dyuproject.protostuff</groupId>
+            <groupId>io.protostuff</groupId>
             <artifactId>protostuff-runtime</artifactId>
             <version>${protostuff.version}</version>
         </dependency>
