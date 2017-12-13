@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import simple.net.NetClient;
 import simple.net.NetClientOptions;
+import simple.net.NetMessageHandler;
+import simple.net.handler.MessageDispatcher;
+import simple.net.handler.MessageHandlerManager;
 import simple.net.protocol.ProtocolFactoryManager;
 import simple.util.PropsUtil;
 
@@ -28,6 +31,8 @@ public class NetClientBootstrap {
     private ThreadFactory ioThreadFactory;
 
     private NetClientOptions clientOptions;
+
+    private MessageDispatcher messageDispatcher;
 
     @Autowired
     private NetBootstrap netBootstrap;
@@ -65,6 +70,9 @@ public class NetClientBootstrap {
         }
 
         netClient.setProtocolFactoryManager(getProtocolFactoryManager());
+        if (messageDispatcher != null) {
+            netClient.setMessageHandler(new NetMessageHandler(getMessageHandlerManager(), messageDispatcher));
+        }
         netClient.start();
         return netClient;
     }
@@ -98,5 +106,17 @@ public class NetClientBootstrap {
         clientOptions.setSendBufferSize(PropsUtil.getInt(conf, "sendBufferSize", 32 * 1024));
         clientOptions.setReuseAddress(PropsUtil.getBoolean(conf, "reuseAddress", true));
         clientOptions.setReconnectIntervalMills(PropsUtil.getInt(conf, "reconnectIntervalMills", 60 * 1000));
+    }
+
+    private MessageHandlerManager getMessageHandlerManager() {
+        return netBootstrap.getMessageHandlerManager();
+    }
+
+    public MessageDispatcher getMessageDispatcher() {
+        return messageDispatcher;
+    }
+
+    public void setMessageDispatcher(MessageDispatcher messageDispatcher) {
+        this.messageDispatcher = messageDispatcher;
     }
 }

@@ -8,7 +8,7 @@ import simple.net.NetClient;
 import simple.net.bootstrap.NetClientBootstrap;
 import simple.net.bootstrap.NetServerBootstrap;
 
-public class NetTest {
+public class SimpleNetTest {
 
     private static NetClientBootstrap clientBootstrap;
     private static NetServerBootstrap serverBootstrap;
@@ -18,6 +18,8 @@ public class NetTest {
     public static void setUp() {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
         clientBootstrap = context.getBean(NetClientBootstrap.class);
+        // client 可以不设置message dispatcher, 如果不监听返回
+        clientBootstrap.setMessageDispatcher(new SimpleMessageDispatcher());
         clientBootstrap.start();
         serverBootstrap = context.getBean(NetServerBootstrap.class);
         serverBootstrap.setMessageDispatcher(new SimpleMessageDispatcher());

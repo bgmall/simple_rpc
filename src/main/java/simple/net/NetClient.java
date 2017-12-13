@@ -233,7 +233,6 @@ public class NetClient extends Bootstrap {
         if (connection.invalidChannel()) {
             if (callback != null) {
                 callback.exceptionCaught(createConnectionException());
-                ;
             }
             return;
         }

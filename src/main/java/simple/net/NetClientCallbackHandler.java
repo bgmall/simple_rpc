@@ -22,6 +22,8 @@ public class NetClientCallbackHandler extends SimpleChannelInboundHandler<NetMes
             if (clientCallState != null) {
                 clientCallState.handleResponse(msg);
             }
+        } else {
+            ctx.fireChannelRead(msg);
         }
     }
 }

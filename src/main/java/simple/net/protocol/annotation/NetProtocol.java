@@ -19,5 +19,5 @@ public @interface NetProtocol {
      */
     int msgId();
 
-    byte codec();
+    byte codec() default 1;
 }
