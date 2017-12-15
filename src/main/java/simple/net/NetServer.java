@@ -11,15 +11,14 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import simple.net.protocol.MessageDecoder;
-import simple.net.protocol.MessageEncoder;
-import simple.net.protocol.NetMessage;
-import simple.net.protocol.ProtocolFactoryManager;
+import simple.net.protocol.message.MessageDecoder;
+import simple.net.protocol.message.MessageEncoder;
+import simple.net.protocol.message.NetMessage;
 import simple.util.NettyUtil;
 
 import java.net.InetSocketAddress;
 
-public class NetServer extends ServerBootstrap {
+public class NetServer {
 
     private static final String CHANNEL_STATE_AWARE_HANDLER = "channel_state_aware_handler";
     private static final String CHANNEL_STATE_HANDLER = "channle_state_handler";
@@ -30,6 +29,8 @@ public class NetServer extends ServerBootstrap {
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetServer.class);
 
     private NetServerOptions serverOptions;
+
+    private ServerBootstrap serverBootstrap;
     /**
      * The boss group.
      */
@@ -43,8 +44,6 @@ public class NetServer extends ServerBootstrap {
      */
     private Channel channel;
 
-    private ProtocolFactoryManager protocolFactoryManager;
-
     private SimpleChannelInboundHandler<NetMessage> messageHandler;
 
     public NetServer(NetServerOptions serverOptions) {
@@ -52,6 +51,10 @@ public class NetServer extends ServerBootstrap {
     }
 
     public void start() {
+        if (getMessageHandler() == null) {
+            throw new RuntimeException("message handler is null");
+        }
+
         Class<? extends ServerChannel> serverChannel;
         if (NettyUtil.isLinuxPlatform()) {
             this.bossGroup = new EpollEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorIoThread"));
@@ -63,18 +66,19 @@ public class NetServer extends ServerBootstrap {
             serverChannel = NioServerSocketChannel.class;
         }
 
-        this.group(this.bossGroup, this.workerGroup);
-        this.channel(serverChannel);
-        this.option(ChannelOption.SO_BACKLOG, serverOptions.getBacklog());
+        serverBootstrap = new ServerBootstrap();
+        serverBootstrap.group(this.bossGroup, this.workerGroup);
+        serverBootstrap.channel(serverChannel);
+        serverBootstrap.option(ChannelOption.SO_BACKLOG, serverOptions.getBacklog());
 
-        this.childOption(ChannelOption.SO_KEEPALIVE, serverOptions.isKeepAlive());
-        this.childOption(ChannelOption.SO_REUSEADDR, true);
-        this.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        this.childOption(ChannelOption.TCP_NODELAY, serverOptions.isTcpNoDelay());
-        this.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, serverOptions.getConnectTimeout());
-        this.childOption(ChannelOption.SO_RCVBUF, serverOptions.getReceiveBufferSize());
-        this.childOption(ChannelOption.SO_SNDBUF, serverOptions.getSendBufferSize());
-        this.childHandler(createNetServerChannelInitializer());
+        serverBootstrap.childOption(ChannelOption.SO_KEEPALIVE, serverOptions.isKeepAlive());
+        serverBootstrap.childOption(ChannelOption.SO_REUSEADDR, true);
+        serverBootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        serverBootstrap.childOption(ChannelOption.TCP_NODELAY, serverOptions.isTcpNoDelay());
+        serverBootstrap.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, serverOptions.getConnectTimeout());
+        serverBootstrap.childOption(ChannelOption.SO_RCVBUF, serverOptions.getReceiveBufferSize());
+        serverBootstrap.childOption(ChannelOption.SO_SNDBUF, serverOptions.getSendBufferSize());
+        serverBootstrap.childHandler(createNetServerChannelInitializer());
 
         listen(serverOptions.getListenPort());
     }
@@ -82,7 +86,7 @@ public class NetServer extends ServerBootstrap {
     private void listen(int port) {
         InetSocketAddress inetSocketAddress = new InetSocketAddress(port);
         try {
-            ChannelFuture channelFuture = this.bind(inetSocketAddress).sync();
+            ChannelFuture channelFuture = serverBootstrap.bind(inetSocketAddress).sync();
             if (channelFuture.isSuccess()) {
                 this.channel = channelFuture.channel();
                 logger.info("server address[{}] started", channel);
@@ -112,14 +116,6 @@ public class NetServer extends ServerBootstrap {
         return serverOptions;
     }
 
-    public ProtocolFactoryManager getProtocolFactoryManager() {
-        return protocolFactoryManager;
-    }
-
-    public void setProtocolFactoryManager(ProtocolFactoryManager protocolFactoryManager) {
-        this.protocolFactoryManager = protocolFactoryManager;
-    }
-
     public SimpleChannelInboundHandler<NetMessage> getMessageHandler() {
         return messageHandler;
     }
@@ -134,22 +130,15 @@ public class NetServer extends ServerBootstrap {
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
 
-                if (protocolFactoryManager == null) {
-                    throw new RuntimeException("protocol factory manager is null");
-                }
-
-                pipeline.addFirst(MESSAGE_ENCODER, new MessageEncoder(protocolFactoryManager));
+                int requiredCompressLength = getServerOptions().getRequiredCompressLength();
+                pipeline.addFirst(MESSAGE_ENCODER, new MessageEncoder(requiredCompressLength));
 
                 int idleTimeoutSeconds = getServerOptions().getIdleTimeoutSeconds();
                 pipeline.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, idleTimeoutSeconds, idleTimeoutSeconds));
                 pipeline.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
 
-                if (getMessageHandler() == null) {
-                    throw new RuntimeException("message handler is null");
-                }
-
                 int maxFrameLength = getServerOptions().getMaxFrameLength();
-                pipeline.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength, protocolFactoryManager));
+                pipeline.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength));
                 pipeline.addLast(MESSAGE_HANDLER, getMessageHandler());
             }
         };

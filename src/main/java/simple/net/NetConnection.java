@@ -6,13 +6,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import simple.net.callback.ClientCallState;
-import simple.net.exception.ConnectionException;
 import simple.net.exception.SendRequestException;
-import simple.net.protocol.CallbackMessage;
-import simple.net.callback.MessageCallback;
-import simple.net.protocol.NetMessage;
-import simple.net.protocol.RetryMessage;
-import simple.rpc.RpcClientCallState;
+import simple.net.protocol.message.CallbackMessage;
+import simple.net.protocol.message.NetMessage;
+import simple.net.protocol.message.RetryMessage;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -38,6 +35,7 @@ public class NetConnection {
             return this.channel;
         }
 
+        logger.info("start connect to remote address[{}]", netClient.getRemoteAddress());
         ChannelFuture channelFuture = netClient.connect();
         channelFuture.addListener(new ChannelFutureListener() {
             @Override
@@ -53,15 +51,16 @@ public class NetConnection {
             }
         });
 
-        if (channelFuture.awaitUninterruptibly(netClient.getClientOptions().getConnectTimeout())) {
+        channelFuture.awaitUninterruptibly();
+        if (channelFuture.isSuccess()) {
             Channel returnChannel = channelFuture.channel();
             if (returnChannel != null && returnChannel.isActive()) {
-                logger.info("open the channel[{}]", channel);
+                logger.info("open the channel[{}]", returnChannel);
                 this.channel = returnChannel;
             }
         } else {
             // connect timeout
-            logger.error("connect to remote address[{}] timeout", netClient.getRemoteAddress());
+            logger.error("connect to remote address[{}] failure", netClient.getRemoteAddress());
         }
         return this.channel;
     }
@@ -72,7 +71,7 @@ public class NetConnection {
             channel.close().addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
-                    logger.info("close the channel[{}]", channel);
+                    logger.info("close the connect to remote address[{}]", netClient.getRemoteAddress());
                 }
             });
             this.channel = null;

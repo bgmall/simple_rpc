@@ -28,6 +28,11 @@ public class NetClientOptions {
     private int receiveBufferSize;
 
     /**
+     * The length need compress
+     */
+    private int requiredCompressLength;
+
+    /**
      * The max length of package
      */
     private int maxFrameLength;
@@ -90,6 +95,14 @@ public class NetClientOptions {
 
     public void setReceiveBufferSize(int receiveBufferSize) {
         this.receiveBufferSize = receiveBufferSize;
+    }
+
+    public int getRequiredCompressLength() {
+        return requiredCompressLength;
+    }
+
+    public void setRequiredCompressLength(int requiredCompressLength) {
+        this.requiredCompressLength = requiredCompressLength;
     }
 
     public int getMaxFrameLength() {

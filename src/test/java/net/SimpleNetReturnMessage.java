@@ -1,7 +1,7 @@
 package net;
 
-import simple.net.protocol.NetMessage;
 import simple.net.protocol.annotation.NetProtocol;
+import simple.net.protocol.message.NetMessage;
 
 @NetProtocol(msgId = 2)
 public class SimpleNetReturnMessage implements NetMessage {

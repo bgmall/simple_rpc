@@ -1,4 +1,4 @@
-package simple.net.protocol;
+package simple.net.protocol.message;
 
 import simple.net.callback.MessageCallback;
 

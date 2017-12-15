@@ -3,24 +3,33 @@ package simple.net.protocol;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ProtocolFactoryManager implements ProtocolFactorySelector {
+public class ProtocolFactoryManager {
 
-    private Map<Byte, ProtocolFactory> protocolCodeToFactory = new HashMap<>();
-
-    public void register(ProtocolFactory protocolFactory) {
-        if (protocolCodeToFactory.containsKey(protocolFactory.getProtocolCode())) {
-            throw new IllegalStateException("The protocol code already register");
-        }
-
-        protocolCodeToFactory.put(protocolFactory.getProtocolCode(), protocolFactory);
+    private static class SingletonHolder {
+        private static final ProtocolFactoryManager INSTANCE = new ProtocolFactoryManager();
     }
 
-    @Override
-    public ProtocolFactory select(byte protocolCode) {
-        return protocolCodeToFactory.get(protocolCode);
+    private ProtocolFactoryManager() {
+        register(new NetProtocolFactory());
+    }
+
+    public static final ProtocolFactoryManager getInstance() {
+        return ProtocolFactoryManager.SingletonHolder.INSTANCE;
+    }
+
+    private Map<Integer, ProtocolFactory> protocolCodeTypeToFactory = new HashMap<>();
+
+    public void register(ProtocolFactory protocolFactory) {
+        if (protocolCodeTypeToFactory.putIfAbsent(protocolFactory.getProtocolType(), protocolFactory) != null) {
+            throw new IllegalStateException("The protocol code type already register");
+        }
+    }
+
+    public ProtocolFactory select(int protocolType) {
+        return protocolCodeTypeToFactory.get(protocolType);
     }
 
     public boolean isEmpty() {
-        return protocolCodeToFactory.isEmpty();
+        return protocolCodeTypeToFactory.isEmpty();
     }
 }

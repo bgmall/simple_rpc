@@ -18,7 +18,10 @@ import simple.net.callback.ClientCallState;
 import simple.net.callback.MessageCallback;
 import simple.net.exception.ConnectionException;
 import simple.net.exception.SendTimeoutException;
-import simple.net.protocol.*;
+import simple.net.protocol.message.CallbackMessage;
+import simple.net.protocol.message.MessageDecoder;
+import simple.net.protocol.message.MessageEncoder;
+import simple.net.protocol.message.NetMessage;
 import simple.util.NettyUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class NetClient extends Bootstrap {
+public class NetClient {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetClient.class);
 
@@ -48,13 +51,17 @@ public class NetClient extends Bootstrap {
      */
     private static final int DEFAULT_TICK_DURATION = 100;
 
+    private Bootstrap bootstrap;
+
     private EventLoopGroup workerGroup;
 
     private NetClientOptions clientOptions;
 
     private String remoteAddress;
 
-    private ProtocolFactoryManager protocolFactoryManager;
+    private String host;
+
+    private int port;
 
     private SimpleChannelInboundHandler<NetMessage> messageHandler;
 
@@ -87,8 +94,9 @@ public class NetClient extends Bootstrap {
     }
 
     public NetClient(NetClientOptions clientOptions, String host, int port) {
+        this.host = host;
+        this.port = port;
         this.remoteAddress = host + ":" + port;
-        this.remoteAddress(host, port);
         this.clientOptions = clientOptions;
     }
 
@@ -110,15 +118,16 @@ public class NetClient extends Bootstrap {
             channelClass = NioSocketChannel.class;
         }
 
-        this.group(workerGroup);
-        this.channel(channelClass);
-        this.handler(createNetClientChannelInitializer());
-        this.option(ChannelOption.SO_REUSEADDR, clientOptions.isReuseAddress());
-        this.option(ChannelOption.SO_SNDBUF, clientOptions.getSendBufferSize());
-        this.option(ChannelOption.SO_RCVBUF, clientOptions.getReceiveBufferSize());
-        this.option(ChannelOption.SO_KEEPALIVE, clientOptions.isKeepAlive());
-        this.option(ChannelOption.TCP_NODELAY, clientOptions.isTcpNoDelay());
-        this.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, clientOptions.getConnectTimeout());
+        bootstrap = new Bootstrap();
+        bootstrap.group(workerGroup);
+        bootstrap.channel(channelClass);
+        bootstrap.handler(createNetClientChannelInitializer());
+        bootstrap.option(ChannelOption.SO_REUSEADDR, clientOptions.isReuseAddress());
+        bootstrap.option(ChannelOption.SO_SNDBUF, clientOptions.getSendBufferSize());
+        bootstrap.option(ChannelOption.SO_RCVBUF, clientOptions.getReceiveBufferSize());
+        bootstrap.option(ChannelOption.SO_KEEPALIVE, clientOptions.isKeepAlive());
+        bootstrap.option(ChannelOption.TCP_NODELAY, clientOptions.isTcpNoDelay());
+        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, clientOptions.getConnectTimeout());
 
         if (channelPool == null) {
             channelPool = new SingleChannelPool(this);
@@ -130,6 +139,7 @@ public class NetClient extends Bootstrap {
             channelPool.close();
             channelPool = null;
         }
+
         // to check instance count
         if (INSTANCE_COUNT.decrementAndGet() == 0) {
             if (timer != null) {
@@ -143,6 +153,15 @@ public class NetClient extends Bootstrap {
         }
     }
 
+    ChannelFuture connect() {
+        if (bootstrap == null) {
+            throw new IllegalStateException("client didn't start");
+        }
+
+        bootstrap.remoteAddress(host, port);
+        return bootstrap.connect();
+    }
+
     public long getNextCorrelationId() {
         return correlationId.getAndIncrement();
     }
@@ -153,7 +172,7 @@ public class NetClient extends Bootstrap {
 
     public void registerPendingRequest(long seqId, ClientCallState state) {
         if (requestMap.containsKey(seqId)) {
-            throw new IllegalArgumentException("State already registered");
+            throw new IllegalArgumentException("state already registered");
         }
         requestMap.put(seqId, state);
     }
@@ -164,14 +183,6 @@ public class NetClient extends Bootstrap {
 
     public String getRemoteAddress() {
         return remoteAddress;
-    }
-
-    public ProtocolFactoryManager getProtocolFactoryManager() {
-        return protocolFactoryManager;
-    }
-
-    public void setProtocolFactoryManager(ProtocolFactoryManager protocolFactoryManager) {
-        this.protocolFactoryManager = protocolFactoryManager;
     }
 
     public SimpleChannelInboundHandler<NetMessage> getMessageHandler() {
@@ -196,17 +207,14 @@ public class NetClient extends Bootstrap {
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline channelPipe = ch.pipeline();
 
-                if (protocolFactoryManager == null) {
-                    throw new RuntimeException("protocol factory manager is null");
-                }
-
-                channelPipe.addLast(MESSAGE_ENCODER, new MessageEncoder(protocolFactoryManager));
+                int requiredCompressLength = getClientOptions().getRequiredCompressLength();
+                channelPipe.addLast(MESSAGE_ENCODER, new MessageEncoder(requiredCompressLength));
 
                 int idleTimeoutSeconds = getClientOptions().getIdleTimeoutSeconds();
                 channelPipe.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, idleTimeoutSeconds, idleTimeoutSeconds));
                 channelPipe.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
                 int maxFrameLength = getClientOptions().getMaxFrameLength();
-                channelPipe.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength, protocolFactoryManager));
+                channelPipe.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength));
                 channelPipe.addLast(MESSAGE_CALLBACK_HANDLER, new NetClientCallbackHandler(NetClient.this));
 
                 // 这边假设client可以不监听message，统一由server监听处理

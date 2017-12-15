@@ -3,8 +3,8 @@ package simple.net;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import simple.net.callback.ClientCallState;
-import simple.net.protocol.CallbackMessage;
-import simple.net.protocol.NetMessage;
+import simple.net.protocol.message.CallbackMessage;
+import simple.net.protocol.message.NetMessage;
 
 public class NetClientCallbackHandler extends SimpleChannelInboundHandler<NetMessage> {
 

@@ -1,8 +1,7 @@
 package simple.net.callback;
 
 import io.netty.util.Timeout;
-import simple.net.protocol.NetMessage;
-import simple.rpc.RpcMessage;
+import simple.net.protocol.message.NetMessage;
 
 /**
  * Created by Administrator on 2017/12/3.

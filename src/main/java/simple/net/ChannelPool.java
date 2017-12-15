@@ -1,7 +1,6 @@
 package simple.net;
 
-import simple.net.protocol.NetMessage;
-import simple.netty.Message;
+import simple.net.protocol.message.NetMessage;
 
 /**
  * Created by Administrator on 2017/12/2.

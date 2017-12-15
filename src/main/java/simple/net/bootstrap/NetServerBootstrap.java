@@ -6,8 +6,6 @@ import simple.net.NetMessageHandler;
 import simple.net.NetServer;
 import simple.net.NetServerOptions;
 import simple.net.handler.MessageDispatcher;
-import simple.net.handler.MessageHandlerManager;
-import simple.net.protocol.ProtocolFactoryManager;
 import simple.util.PropsUtil;
 
 import java.util.Properties;
@@ -27,9 +25,6 @@ public class NetServerBootstrap {
     public void start() {
         netBootstrap.start();
 
-        if (getProtocolFactoryManager().isEmpty()) {
-            throw new RuntimeException("protocol factory manager is empty, need register protocol factory!!!");
-        }
         if (messageDispatcher == null) {
             throw new RuntimeException("message dispatcher is null");
         }
@@ -37,8 +32,7 @@ public class NetServerBootstrap {
         initServerOptions();
 
         netServer = new NetServer(serverOptions);
-        netServer.setProtocolFactoryManager(getProtocolFactoryManager());
-        netServer.setMessageHandler(new NetMessageHandler(getMessageHandlerManager(), messageDispatcher));
+        netServer.setMessageHandler(new NetMessageHandler(messageDispatcher));
         netServer.start();
     }
 
@@ -48,14 +42,6 @@ public class NetServerBootstrap {
         if (netServer != null) {
             netServer.shutdown();
         }
-    }
-
-    public ProtocolFactoryManager getProtocolFactoryManager() {
-        return netBootstrap.getProtocolFactoryManager();
-    }
-
-    private MessageHandlerManager getMessageHandlerManager() {
-        return netBootstrap.getMessageHandlerManager();
     }
 
     public MessageDispatcher getMessageDispatcher() {
@@ -80,6 +66,7 @@ public class NetServerBootstrap {
         serverOptions.setIdleTimeoutSeconds(PropsUtil.getInt(conf, "idleTimeoutSeconds", 3 * 60 * 1000));
         serverOptions.setTcpNoDelay(PropsUtil.getBoolean(conf, "tcpNoDelay", true));
         serverOptions.setKeepAlive(PropsUtil.getBoolean(conf, "keepAlive", true));
+        serverOptions.setRequiredCompressLength(PropsUtil.getInt(conf, "requiredCompressLength", 256));
         serverOptions.setMaxFrameLength(PropsUtil.getInt(conf, "maxFrameLength", 32 * 1024 * 1024));
         serverOptions.setReceiveBufferSize(PropsUtil.getInt(conf, "receiveBufferSize", 8 * 1024));
         serverOptions.setSendBufferSize(PropsUtil.getInt(conf, "sendBufferSize", 32 * 1024));

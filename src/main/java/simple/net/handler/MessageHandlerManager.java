@@ -8,6 +8,17 @@ import java.util.Map;
 
 public class MessageHandlerManager {
 
+    private static class SingletonHolder {
+        private static final MessageHandlerManager INSTANCE = new MessageHandlerManager();
+    }
+
+    private MessageHandlerManager() {
+    }
+
+    public static final MessageHandlerManager getInstance() {
+        return SingletonHolder.INSTANCE;
+    }
+
     private Map<Integer, MessageHandlerDesc> msgIdToHandler = new HashMap<>();
 
     public void register(Object handler) {

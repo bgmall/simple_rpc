@@ -1,7 +1,7 @@
 package simple.net.handler;
 
 import io.netty.channel.Channel;
-import simple.net.protocol.NetMessage;
+import simple.net.protocol.message.NetMessage;
 
 
 public interface MessageDispatcher {

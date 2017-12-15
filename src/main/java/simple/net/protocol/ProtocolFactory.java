@@ -1,10 +1,16 @@
 package simple.net.protocol;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import simple.net.protocol.message.NetMessage;
+
+import java.util.List;
+
 public interface ProtocolFactory {
 
-    byte getProtocolCode();
+    int getProtocolType();
 
-    byte[] encode(NetMessage msg);
+    void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception;
 
-    Object decode(int msgId, byte[] data);
+    void encode(ChannelHandlerContext ctx, NetMessage msg, ByteBuf out) throws Exception;
 }

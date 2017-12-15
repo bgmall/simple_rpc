@@ -3,7 +3,7 @@ package net;
 import io.netty.channel.Channel;
 import simple.net.handler.MessageDispatcher;
 import simple.net.handler.MessageHandlerDesc;
-import simple.net.protocol.NetMessage;
+import simple.net.protocol.message.NetMessage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

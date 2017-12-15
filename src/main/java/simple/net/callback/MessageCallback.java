@@ -1,6 +1,6 @@
 package simple.net.callback;
 
-import simple.net.protocol.NetMessage;
+import simple.net.protocol.message.NetMessage;
 
 /**
  * Created by Administrator on 2017/12/2.

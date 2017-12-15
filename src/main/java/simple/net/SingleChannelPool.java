@@ -1,6 +1,6 @@
 package simple.net;
 
-import simple.net.protocol.NetMessage;
+import simple.net.protocol.message.NetMessage;
 
 /**
  * Created by Administrator on 2017/12/2.
@@ -35,7 +35,6 @@ public class SingleChannelPool implements ChannelPool {
     public void close() {
         if (this.connection != null) {
             this.connection.close();
-            this.connection = null;
         }
     }
 }

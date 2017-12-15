@@ -11,21 +11,20 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 import simple.net.handler.MessageHandlerManager;
 import simple.net.handler.annotation.NetMessageHandler;
-import simple.net.protocol.MessageManager;
-import simple.net.protocol.NetMessage;
 import simple.net.protocol.ProtocolFactoryManager;
-import simple.net.protocol.codec.protostuff.ProtostuffProtocolFactory;
+import simple.net.protocol.annotation.NetProtocol;
+import simple.net.protocol.codec.CodecFactoryManager;
+import simple.net.protocol.codec.protostuff.ProtostuffCodecFactory;
+import simple.net.protocol.compress.CompressFactoryManager;
+import simple.net.protocol.message.MessageManager;
+import simple.net.protocol.message.NetMessage;
+
+import java.util.Collection;
 
 @Component
 class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetBootstrap.class);
-
-    private MessageManager messageManager = new MessageManager();
-
-    private MessageHandlerManager messageHandlerManager = new MessageHandlerManager();
-
-    private ProtocolFactoryManager protocolFactoryManager = new ProtocolFactoryManager();
 
     @Autowired
     private ConfigurableListableBeanFactory factory;
@@ -35,13 +34,28 @@ class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> {
 
     public void start() {
         // 注册默认的编解码factory: protostuff
-        if (protocolFactoryManager.isEmpty()) {
-            protocolFactoryManager.register(new ProtostuffProtocolFactory(messageManager));
+        if (CodecFactoryManager.getInstance().isEmpty()) {
+            CodecFactoryManager.getInstance().register(new ProtostuffCodecFactory());
         }
+
+        checkMessageValid();
     }
 
     public void shutdown() {
 
+    }
+
+    private void checkMessageValid() {
+        Collection<Class<?>> messageClasses = MessageManager.getInstance().getMessageClasses();
+        for (Class<?> clazz : messageClasses) {
+            NetProtocol annotation = clazz.getAnnotation(NetProtocol.class);
+            if (CompressFactoryManager.getInstance().select(annotation.compressType()) == null) {
+                throw new IllegalStateException("msgId [" + annotation.msgId() + "] compressType[" + annotation.compressType() + "] invalid");
+            }
+            if (ProtocolFactoryManager.getInstance().select(annotation.codecType()) == null) {
+                throw new IllegalStateException("msgId [" + annotation.msgId() + "] codeType[" + annotation.codecType() + "] invalid");
+            }
+        }
     }
 
     @Override
@@ -54,11 +68,11 @@ class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> {
                 try {
                     final Class<?> beanClass = Class.forName(beanClassName);
                     if (NetMessage.class.isAssignableFrom(beanClass)) {
-                        messageManager.register(beanClass);
+                        MessageManager.getInstance().register(beanClass);
                     } else {
                         NetMessageHandler annotation = beanClass.getAnnotation(NetMessageHandler.class);
                         if (annotation != null) {
-                            messageHandlerManager.register(context.getBean(beanClass));
+                            MessageHandlerManager.getInstance().register(context.getBean(beanClass));
                         }
                     }
                 } catch (ClassNotFoundException e) {
@@ -66,13 +80,5 @@ class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> {
                 }
             }
         }
-    }
-
-    public ProtocolFactoryManager getProtocolFactoryManager() {
-        return protocolFactoryManager;
-    }
-
-    public MessageHandlerManager getMessageHandlerManager() {
-        return messageHandlerManager;
     }
 }
