@@ -1,6 +1,7 @@
 package simple.net.protocol.compress;
 
 import simple.net.protocol.compress.snappy.SnappyCompressFactory;
+import simple.net.protocol.compress.zlib.ZlibCompressFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +14,7 @@ public class CompressFactoryManager {
 
     private CompressFactoryManager() {
         register(new SnappyCompressFactory());
+        register(new ZlibCompressFactory());
     }
 
     public static final CompressFactoryManager getInstance() {
