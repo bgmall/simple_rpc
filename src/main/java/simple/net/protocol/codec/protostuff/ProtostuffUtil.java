@@ -59,6 +59,9 @@ public class ProtostuffUtil {
     public static <T> T deserialize(byte[] data, Class<T> cls) {
         try {
             T message = (T) objenesis.newInstance(cls);
+            if (data == null || data.length == 0) {
+                return message;
+            }
             Schema<T> schema = getSchema(cls);
             ProtostuffIOUtil.mergeFrom(data, message, schema);
             return message;

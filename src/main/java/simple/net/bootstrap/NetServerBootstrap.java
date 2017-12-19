@@ -63,10 +63,9 @@ public class NetServerBootstrap {
         serverOptions.setConnectTimeout(PropsUtil.getInt(conf, "connectTimeout", 10000));
         serverOptions.setAcceptorThreads(PropsUtil.getInt(conf, "acceptorThreads", 1));
         serverOptions.setWorkThreads(PropsUtil.getInt(conf, "workerThreads", Runtime.getRuntime().availableProcessors()));
-        serverOptions.setIdleTimeoutSeconds(PropsUtil.getInt(conf, "idleTimeoutSeconds", 3 * 60 * 1000));
+        serverOptions.setIdleTimeoutSeconds(PropsUtil.getInt(conf, "idleTimeoutSeconds", 3 * 60));
         serverOptions.setTcpNoDelay(PropsUtil.getBoolean(conf, "tcpNoDelay", true));
         serverOptions.setKeepAlive(PropsUtil.getBoolean(conf, "keepAlive", true));
-        serverOptions.setRequiredCompressLength(PropsUtil.getInt(conf, "requiredCompressLength", 256));
         serverOptions.setMaxFrameLength(PropsUtil.getInt(conf, "maxFrameLength", 32 * 1024 * 1024));
         serverOptions.setReceiveBufferSize(PropsUtil.getInt(conf, "receiveBufferSize", 8 * 1024));
         serverOptions.setSendBufferSize(PropsUtil.getInt(conf, "sendBufferSize", 32 * 1024));

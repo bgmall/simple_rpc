@@ -39,6 +39,7 @@ public class NetClient {
     private static final String CHANNEL_STATE_HANDLER = "channle_state_handler";
     private static final String MESSAGE_DECODER = "message_decoder";
     private static final String MESSAGE_ENCODER = "message_encoder";
+    private static final String MESSAGE_HEARTBEAT = "message_heartbeat";
     private static final String MESSAGE_CALLBACK_HANDLER = "message_callback_handler";
     private static final String MESSAGE_HANDLER = "message_handler";
 
@@ -207,14 +208,15 @@ public class NetClient {
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline channelPipe = ch.pipeline();
 
-                int requiredCompressLength = getClientOptions().getRequiredCompressLength();
-                channelPipe.addLast(MESSAGE_ENCODER, new MessageEncoder(requiredCompressLength));
+                channelPipe.addLast(MESSAGE_ENCODER, new MessageEncoder());
 
                 int idleTimeoutSeconds = getClientOptions().getIdleTimeoutSeconds();
-                channelPipe.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, idleTimeoutSeconds, idleTimeoutSeconds));
+                channelPipe.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, 0, 0));
                 channelPipe.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
                 int maxFrameLength = getClientOptions().getMaxFrameLength();
                 channelPipe.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength));
+                int heartBeatIntervalMills = getClientOptions().getHeartBeatIntervalMills();
+                channelPipe.addLast(MESSAGE_HEARTBEAT, new HeartBeatMessageClientHandler(heartBeatIntervalMills));
                 channelPipe.addLast(MESSAGE_CALLBACK_HANDLER, new NetClientCallbackHandler(NetClient.this));
 
                 // 这边假设client可以不监听message，统一由server监听处理

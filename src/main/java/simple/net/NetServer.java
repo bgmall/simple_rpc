@@ -24,6 +24,7 @@ public class NetServer {
     private static final String CHANNEL_STATE_HANDLER = "channle_state_handler";
     private static final String MESSAGE_DECODER = "message_decoder";
     private static final String MESSAGE_ENCODER = "message_encoder";
+    private static final String MESSAGE_HEARTBEAT = "message_heartbeat";
     private static final String MESSAGE_HANDLER = "message_handler";
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetServer.class);
@@ -130,15 +131,15 @@ public class NetServer {
             protected void initChannel(Channel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
 
-                int requiredCompressLength = getServerOptions().getRequiredCompressLength();
-                pipeline.addFirst(MESSAGE_ENCODER, new MessageEncoder(requiredCompressLength));
+                pipeline.addFirst(MESSAGE_ENCODER, new MessageEncoder());
 
                 int idleTimeoutSeconds = getServerOptions().getIdleTimeoutSeconds();
-                pipeline.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, idleTimeoutSeconds, idleTimeoutSeconds));
+                pipeline.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, 0, 0));
                 pipeline.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
 
                 int maxFrameLength = getServerOptions().getMaxFrameLength();
                 pipeline.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength));
+                pipeline.addLast(MESSAGE_HEARTBEAT, new HeartBeatMessageServerHandler());
                 pipeline.addLast(MESSAGE_HANDLER, getMessageHandler());
             }
         };

@@ -45,14 +45,15 @@ public class SimpleNetTest {
         simpleNetMessage.setMsg("hello");
         NetClient netClient = clientBootstrap.getNetClient(1);
         netClient.sendMessage(simpleNetMessage);
-        Thread.sleep(2000);
+        Thread.sleep(10000);
 
 //        clientBootstrap.shutdown();
 //        clientBootstrap.start();
-        netClient.shutdown();
-        netClient.start();
-        netClient = clientBootstrap.createNetClient(1, "127.0.0.1", 8000);
+//        netClient.shutdown();
+//        netClient.start();
+//        netClient = clientBootstrap.createNetClient(1, "127.0.0.1", 8000);
         netClient.sendMessage(simpleNetMessage);
+        netClient.shutdown();
         Thread.sleep(2000);
     }
 }

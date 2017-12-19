@@ -8,13 +8,6 @@ import simple.net.protocol.ProtocolFactoryManager;
 
 public class MessageEncoder extends MessageToByteEncoder<NetMessage> {
 
-    private int requiredCompressLength;
-
-    public MessageEncoder(int requiredCompressLength) {
-        this.requiredCompressLength = requiredCompressLength;
-        this.requiredCompressLength = 1;
-    }
-
     @Override
     protected void encode(ChannelHandlerContext ctx, NetMessage msg, ByteBuf out) throws Exception {
         int protocolType = MessageManager.getInstance().getProtocolType(msg.getMsgId());

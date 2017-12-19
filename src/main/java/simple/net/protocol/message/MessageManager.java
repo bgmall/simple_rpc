@@ -36,6 +36,12 @@ public class MessageManager {
         }
 
         int msgId = annotation.msgId();
+        if (!HeartBeatMessage.class.isAssignableFrom(msgClass)) {
+            if (annotation.msgId() <= 0) {
+                throw new IllegalArgumentException("illegal message id");
+            }
+        }
+
         if (msgIdToClass.putIfAbsent(msgId, msgClass) != null) {
             throw new IllegalStateException(msgId + " already exist, duplicate msgId define");
         }
@@ -45,6 +51,7 @@ public class MessageManager {
         msgIdToProtocolType.putIfAbsent(msgId, annotation.protocolType());
         msgIdToCompressRequiredLength.putIfAbsent(msgId, annotation.compressRequiredLength());
     }
+
 
     public Class<?> getMessageClass(int msgId) {
         return msgIdToClass.get(msgId);

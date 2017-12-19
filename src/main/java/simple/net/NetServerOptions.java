@@ -28,11 +28,6 @@ public class NetServerOptions {
     private int receiveBufferSize;
 
     /**
-     * The length need compress
-     */
-    private int requiredCompressLength;
-
-    /**
      * The max length of package
      */
     private int maxFrameLength;
@@ -161,13 +156,5 @@ public class NetServerOptions {
 
     public void setMaxFrameLength(int maxFrameLength) {
         this.maxFrameLength = maxFrameLength;
-    }
-
-    public int getRequiredCompressLength() {
-        return requiredCompressLength;
-    }
-
-    public void setRequiredCompressLength(int requiredCompressLength) {
-        this.requiredCompressLength = requiredCompressLength;
     }
 }

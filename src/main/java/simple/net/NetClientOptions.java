@@ -17,6 +17,9 @@ public class NetClientOptions {
      */
     private int reconnectIntervalMills;
 
+
+    private int heartBeatIntervalMills;
+
     /**
      * The send buffer size.
      */
@@ -26,11 +29,6 @@ public class NetClientOptions {
      * The receive buffer size.
      */
     private int receiveBufferSize;
-
-    /**
-     * The length need compress
-     */
-    private int requiredCompressLength;
 
     /**
      * The max length of package
@@ -81,6 +79,14 @@ public class NetClientOptions {
         this.reconnectIntervalMills = reconnectIntervalMills;
     }
 
+    public int getHeartBeatIntervalMills() {
+        return heartBeatIntervalMills;
+    }
+
+    public void setHeartBeatIntervalMills(int heartBeatIntervalMills) {
+        this.heartBeatIntervalMills = heartBeatIntervalMills;
+    }
+
     public int getSendBufferSize() {
         return sendBufferSize;
     }
@@ -95,14 +101,6 @@ public class NetClientOptions {
 
     public void setReceiveBufferSize(int receiveBufferSize) {
         this.receiveBufferSize = receiveBufferSize;
-    }
-
-    public int getRequiredCompressLength() {
-        return requiredCompressLength;
-    }
-
-    public void setRequiredCompressLength(int requiredCompressLength) {
-        this.requiredCompressLength = requiredCompressLength;
     }
 
     public int getMaxFrameLength() {

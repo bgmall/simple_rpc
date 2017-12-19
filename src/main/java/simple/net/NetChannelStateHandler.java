@@ -15,7 +15,7 @@ public class NetChannelStateHandler extends ChannelDuplexHandler {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent e = (IdleStateEvent) evt;
-            if (e.state() == IdleState.ALL_IDLE) {
+            if (e.state() == IdleState.READER_IDLE) {
                 logger.error("channel[{}] is idle for period time. close now.", ctx.channel());
                 // if no read and write for period time, close current channel
                 ctx.close();
