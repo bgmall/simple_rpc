@@ -4,7 +4,9 @@ import simple.net.protocol.message.NetMessage;
 
 public abstract class BigDataMessage implements NetMessage {
 
-    private transient byte[] data;
+    private static final byte[] EMPTY_BYTES = new byte[0];
+
+    private transient byte[] data = EMPTY_BYTES;
 
     public byte[] getData() {
         return this.data;

@@ -21,8 +21,10 @@ public class SimpleNetMessageHandler {
 
     @NetMessageInvoke(msgId = 3)
     public void handleBigDataMessage(Channel channel, SimpleBigDataMessage bigDataMessage) {
-        String str = new String(bigDataMessage.getData());
-        System.out.println(str);
+        if (bigDataMessage.getData() != null && bigDataMessage.getData().length != 0) {
+            String str = new String(bigDataMessage.getData());
+            System.out.println(str);
+        }
         SimpleBigDataReturnMessage simpleBigDataReturnMessage = new SimpleBigDataReturnMessage();
         String strRes = "world, bigData";
         simpleBigDataReturnMessage.setData(strRes.getBytes());

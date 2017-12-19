@@ -55,11 +55,11 @@ public class SimpleNetTest {
         netClient.sendMessage(simpleNetMessage);
 
         SimpleBigDataMessage simpleBigDataMessage = new SimpleBigDataMessage();
-        String strReq = "hello, bigData";
-        simpleBigDataMessage.setData(strReq.getBytes());
+//        String strReq = "hello, bigData";
+//        simpleBigDataMessage.setData(strReq.getBytes());
         netClient.sendMessage(simpleBigDataMessage);
 
-        Thread.sleep(1000);
+        Thread.sleep(10000);
         netClient.shutdown();
 
 
