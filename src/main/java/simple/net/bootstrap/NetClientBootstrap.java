@@ -83,12 +83,12 @@ public class NetClientBootstrap {
         clientOptions.setIdleTimeoutSeconds(PropsUtil.getInt(conf, "idleTimeoutSeconds", 3 * 60));
         clientOptions.setTcpNoDelay(PropsUtil.getBoolean(conf, "tcpNoDelay", true));
         clientOptions.setKeepAlive(PropsUtil.getBoolean(conf, "keepAlive", true));
-        clientOptions.setMaxFrameLength(PropsUtil.getInt(conf, "maxFrameLength", 32 * 1024 * 1024));
-        clientOptions.setReceiveBufferSize(PropsUtil.getInt(conf, "receiveBufferSize", 8 * 1024));
+        clientOptions.setMaxFrameLength(PropsUtil.getInt(conf, "maxFrameLength", 32 * 1024));
+        clientOptions.setReceiveBufferSize(PropsUtil.getInt(conf, "receiveBufferSize", 32 * 1024));
         clientOptions.setSendBufferSize(PropsUtil.getInt(conf, "sendBufferSize", 32 * 1024));
         clientOptions.setReuseAddress(PropsUtil.getBoolean(conf, "reuseAddress", true));
         clientOptions.setReconnectIntervalMills(PropsUtil.getInt(conf, "reconnectIntervalMills", 60 * 1000));
-        clientOptions.setHeartBeatIntervalMills(PropsUtil.getInt(conf, "heartBeatIntervalMills", 10 * 1000));
+        clientOptions.setHeartBeatIntervalMills(PropsUtil.getInt(conf, "heartBeatIntervalMills", 20 * 1000));
     }
 
     public MessageDispatcher getMessageDispatcher() {

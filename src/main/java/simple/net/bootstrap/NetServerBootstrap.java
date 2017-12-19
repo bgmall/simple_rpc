@@ -66,8 +66,8 @@ public class NetServerBootstrap {
         serverOptions.setIdleTimeoutSeconds(PropsUtil.getInt(conf, "idleTimeoutSeconds", 3 * 60));
         serverOptions.setTcpNoDelay(PropsUtil.getBoolean(conf, "tcpNoDelay", true));
         serverOptions.setKeepAlive(PropsUtil.getBoolean(conf, "keepAlive", true));
-        serverOptions.setMaxFrameLength(PropsUtil.getInt(conf, "maxFrameLength", 32 * 1024 * 1024));
-        serverOptions.setReceiveBufferSize(PropsUtil.getInt(conf, "receiveBufferSize", 8 * 1024));
+        serverOptions.setMaxFrameLength(PropsUtil.getInt(conf, "maxFrameLength", 32 * 1024));
+        serverOptions.setReceiveBufferSize(PropsUtil.getInt(conf, "receiveBufferSize", 32 * 1024));
         serverOptions.setSendBufferSize(PropsUtil.getInt(conf, "sendBufferSize", 32 * 1024));
         serverOptions.setReuseAddress(PropsUtil.getBoolean(conf, "reuseAddress", true));
         serverOptions.setBacklog(PropsUtil.getInt(conf, "backlog", 10000));
