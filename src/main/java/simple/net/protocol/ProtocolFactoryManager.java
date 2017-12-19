@@ -1,5 +1,7 @@
 package simple.net.protocol;
 
+import simple.net.protocol.impl.bigData.BigDataProtocolFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,6 +13,7 @@ public class ProtocolFactoryManager {
 
     private ProtocolFactoryManager() {
         register(new NetProtocolFactory());
+        register(new BigDataProtocolFactory());
     }
 
     public static final ProtocolFactoryManager getInstance() {

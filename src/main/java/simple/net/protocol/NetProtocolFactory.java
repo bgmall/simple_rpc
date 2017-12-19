@@ -28,6 +28,11 @@ public class NetProtocolFactory implements ProtocolFactory {
     }
 
     @Override
+    public boolean checkValidMessage(Class<?> msgClass) {
+        return NetMessage.class.isAssignableFrom(msgClass);
+    }
+
+    @Override
     public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         int msgId = in.readInt();
         int length = in.readInt();
@@ -77,8 +82,14 @@ public class NetProtocolFactory implements ProtocolFactory {
             return;
         }
 
-        Object decode = codecFactory.decode(msgId, data);
-        out.add(decode);
+        Object msg = codecFactory.decode(msgId, data);
+        if (msg == null) {
+            logger.error("invalid message, message deserialize null object, msgId[{}], force closing channel[{}]", msgId, ctx.channel());
+            ctx.close();
+            return;
+        }
+
+        out.add(msg);
     }
 
     @Override
@@ -102,23 +113,21 @@ public class NetProtocolFactory implements ProtocolFactory {
 
         int compressType = MessageManager.getInstance().getCompressType(msgId);
         int compressRequiredLength = MessageManager.getInstance().getCompressRequiredLength(msgId);
-        if (compressType == CompressType.COMPRESS_NO || data.length < compressRequiredLength) {
-            out.writeInt(data.length + 1);
-            out.writeByte(NO_COMPRESS);
-            out.writeBytes(data);
-        } else {
+        byte compressed = NO_COMPRESS;
+        if (compressType != CompressType.COMPRESS_NO && data.length >= compressRequiredLength) {
             CompressFactory compressFactory = CompressFactoryManager.getInstance().select(compressType);
             if (compressFactory == null) {
                 logger.error("can't find compress factory for msgId[{}], compressType[{}], force closing channel[{}]", msgId, compressType, ctx.channel());
                 ctx.close();
                 return;
             }
-
-            byte[] compress = compressFactory.compress(data);
-            out.writeInt(compress.length + 1);
-            out.writeByte(COMPRESSED);
-            out.writeBytes(compress);
+            compressed = COMPRESSED;
+            data = compressFactory.compress(data);
         }
+
+        out.writeInt(data.length + 1);
+        out.writeByte(compressed);
+        out.writeBytes(data);
 
 //        ProtocolFactory protocolFactory = ProtocolFactoryManager.getInstance().select(msg.getCodeType());
 //        out.writeInt(msg.getMsgId());

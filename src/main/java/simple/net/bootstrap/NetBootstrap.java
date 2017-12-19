@@ -11,6 +11,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 import simple.net.handler.MessageHandlerManager;
 import simple.net.handler.annotation.NetMessageHandler;
+import simple.net.protocol.ProtocolFactory;
 import simple.net.protocol.ProtocolFactoryManager;
 import simple.net.protocol.annotation.NetProtocol;
 import simple.net.protocol.codec.CodecFactoryManager;
@@ -49,11 +50,15 @@ class NetBootstrap implements ApplicationListener<ContextRefreshedEvent> {
         Collection<Class<?>> messageClasses = MessageManager.getInstance().getMessageClasses();
         for (Class<?> clazz : messageClasses) {
             NetProtocol annotation = clazz.getAnnotation(NetProtocol.class);
-            if (CompressFactoryManager.getInstance().select(annotation.compressType()) == null) {
-                throw new IllegalStateException("msgId [" + annotation.msgId() + "] compressType[" + annotation.compressType() + "] invalid");
+            ProtocolFactory protocolFactory = ProtocolFactoryManager.getInstance().select(annotation.protocolType());
+            if (protocolFactory == null || !protocolFactory.checkValidMessage(clazz)) {
+                throw new IllegalStateException("msgId[" + annotation.msgId() + "] protocolType[" + annotation.protocolType() + "] invalid");
             }
-            if (ProtocolFactoryManager.getInstance().select(annotation.codecType()) == null) {
-                throw new IllegalStateException("msgId [" + annotation.msgId() + "] codeType[" + annotation.codecType() + "] invalid");
+            if (CompressFactoryManager.getInstance().select(annotation.compressType()) == null) {
+                throw new IllegalStateException("msgId[" + annotation.msgId() + "] compressType[" + annotation.compressType() + "] invalid");
+            }
+            if (CodecFactoryManager.getInstance().select(annotation.codecType()) == null) {
+                throw new IllegalStateException("msgId[" + annotation.msgId() + "] codeType[" + annotation.codecType() + "] invalid");
             }
         }
     }

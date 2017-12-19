@@ -45,7 +45,7 @@ public class SimpleNetTest {
         simpleNetMessage.setMsg("hello");
         NetClient netClient = clientBootstrap.getNetClient(1);
         netClient.sendMessage(simpleNetMessage);
-        Thread.sleep(10000);
+        Thread.sleep(2000);
 
 //        clientBootstrap.shutdown();
 //        clientBootstrap.start();
@@ -53,7 +53,15 @@ public class SimpleNetTest {
 //        netClient.start();
 //        netClient = clientBootstrap.createNetClient(1, "127.0.0.1", 8000);
         netClient.sendMessage(simpleNetMessage);
+
+        SimpleBigDataMessage simpleBigDataMessage = new SimpleBigDataMessage();
+        String strReq = "hello, bigData";
+        simpleBigDataMessage.setData(strReq.getBytes());
+        netClient.sendMessage(simpleBigDataMessage);
+
+        Thread.sleep(1000);
         netClient.shutdown();
-        Thread.sleep(2000);
+
+
     }
 }

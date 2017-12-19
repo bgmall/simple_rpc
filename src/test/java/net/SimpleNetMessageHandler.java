@@ -18,4 +18,20 @@ public class SimpleNetMessageHandler {
     public void handleSimpleMessageReturn(SimpleNetReturnMessage returnMessage) {
         System.out.println(returnMessage.getReturnMsg());
     }
+
+    @NetMessageInvoke(msgId = 3)
+    public void handleBigDataMessage(Channel channel, SimpleBigDataMessage bigDataMessage) {
+        String str = new String(bigDataMessage.getData());
+        System.out.println(str);
+        SimpleBigDataReturnMessage simpleBigDataReturnMessage = new SimpleBigDataReturnMessage();
+        String strRes = "world, bigData";
+        simpleBigDataReturnMessage.setData(strRes.getBytes());
+        channel.writeAndFlush(simpleBigDataReturnMessage);
+    }
+
+    @NetMessageInvoke(msgId = 4)
+    public void handleBigDataMessageReturn(SimpleBigDataReturnMessage returnMessage) {
+        String str = new String(returnMessage.getData());
+        System.out.println(str);
+    }
 }

@@ -10,6 +10,8 @@ public interface ProtocolFactory {
 
     int getProtocolType();
 
+    boolean checkValidMessage(Class<?> msgClass);
+
     void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception;
 
     void encode(ChannelHandlerContext ctx, NetMessage msg, ByteBuf out) throws Exception;
