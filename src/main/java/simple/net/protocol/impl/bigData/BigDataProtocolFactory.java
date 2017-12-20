@@ -131,6 +131,8 @@ public class BigDataProtocolFactory implements ProtocolFactory {
         if (simpleDataLength > 0) {
             out.writeBytes(simpleData);
         }
-        out.writeBytes(bigData);
+        if (bigData.length > 0) {
+            out.writeBytes(bigData);
+        }
     }
 }
