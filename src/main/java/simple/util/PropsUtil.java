@@ -29,7 +29,7 @@ public final class PropsUtil {
             props = new Properties();
             props.load(is);
         } catch (IOException e) {
-            logger.error("load properties file failure", e);
+            logger.warn("load properties file failure", e);
         } finally {
             if (is != null) {
                 try {

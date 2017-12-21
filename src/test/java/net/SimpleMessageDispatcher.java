@@ -1,14 +1,17 @@
 package net;
 
 import io.netty.channel.Channel;
+import io.netty.util.internal.logging.InternalLogger;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import simple.net.handler.MessageDispatcher;
 import simple.net.handler.MessageHandlerDesc;
 import simple.net.protocol.message.NetMessage;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class SimpleMessageDispatcher implements MessageDispatcher {
+
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(SimpleMessageDispatcher.class);
 
     @Override
     public void messageReceived(Channel channel, NetMessage message, MessageHandlerDesc messageHandlerDesc) {
@@ -16,10 +19,8 @@ public class SimpleMessageDispatcher implements MessageDispatcher {
         try {
             Object[] objects = convertParams(channel, messageHandlerDesc, message);
             method.invoke(messageHandlerDesc.getHandler(), objects);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            logger.error(e);
         }
     }
 
@@ -52,7 +53,6 @@ public class SimpleMessageDispatcher implements MessageDispatcher {
 
     @Override
     public void exceptionCaught(Channel channel, Throwable cause) throws Exception {
-
     }
 
 }

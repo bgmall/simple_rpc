@@ -13,7 +13,6 @@ import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import simple.net.protocol.message.MessageDecoder;
 import simple.net.protocol.message.MessageEncoder;
-import simple.net.protocol.message.NetMessage;
 import simple.util.NettyUtil;
 
 import java.net.InetSocketAddress;
@@ -45,17 +44,17 @@ public class NetServer {
      */
     private Channel channel;
 
-    private SimpleChannelInboundHandler<NetMessage> messageHandler;
+    private NetChannelStateHandler stateHandler;
+
+    private NetMessageHandler messageHandler;
+
+    private HeartBeatMessageServerHandler heartBeatMessageServerHandler = new HeartBeatMessageServerHandler();
 
     public NetServer(NetServerOptions serverOptions) {
         this.serverOptions = serverOptions;
     }
 
     public void start() {
-        if (getMessageHandler() == null) {
-            throw new RuntimeException("message handler is null");
-        }
-
         Class<? extends ServerChannel> serverChannel;
         if (NettyUtil.isLinuxPlatform()) {
             this.bossGroup = new EpollEventLoopGroup(serverOptions.getAcceptorThreads(), new DefaultThreadFactory("NetServerAcceptorIoThread"));
@@ -117,11 +116,11 @@ public class NetServer {
         return serverOptions;
     }
 
-    public SimpleChannelInboundHandler<NetMessage> getMessageHandler() {
-        return messageHandler;
+    public void setStateHandler(NetChannelStateHandler stateHandler) {
+        this.stateHandler = stateHandler;
     }
 
-    public void setMessageHandler(SimpleChannelInboundHandler<NetMessage> messageHandler) {
+    public void setMessageHandler(NetMessageHandler messageHandler) {
         this.messageHandler = messageHandler;
     }
 
@@ -132,15 +131,13 @@ public class NetServer {
                 ChannelPipeline pipeline = ch.pipeline();
 
                 pipeline.addFirst(MESSAGE_ENCODER, new MessageEncoder());
-
                 int idleTimeoutSeconds = getServerOptions().getIdleTimeoutSeconds();
                 pipeline.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, 0, 0));
-                pipeline.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
-
-                int maxFrameLength = getServerOptions().getMaxFrameLength();
+                pipeline.addLast(CHANNEL_STATE_HANDLER, stateHandler);
+                int maxFrameLength = serverOptions.getMaxFrameLength();
                 pipeline.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength));
-                pipeline.addLast(MESSAGE_HEARTBEAT, new HeartBeatMessageServerHandler());
-                pipeline.addLast(MESSAGE_HANDLER, getMessageHandler());
+                pipeline.addLast(MESSAGE_HEARTBEAT, heartBeatMessageServerHandler);
+                pipeline.addLast(MESSAGE_HANDLER, messageHandler);
             }
         };
     }

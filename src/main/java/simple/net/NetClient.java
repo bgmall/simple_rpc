@@ -64,7 +64,9 @@ public class NetClient {
 
     private int port;
 
-    private SimpleChannelInboundHandler<NetMessage> messageHandler;
+    private NetChannelStateHandler stateHandler;
+
+    private NetMessageHandler messageHandler;
 
     private ChannelPool channelPool;
 
@@ -186,11 +188,11 @@ public class NetClient {
         return remoteAddress;
     }
 
-    public SimpleChannelInboundHandler<NetMessage> getMessageHandler() {
-        return messageHandler;
+    public void setStateHandler(NetChannelStateHandler stateHandler) {
+        this.stateHandler = stateHandler;
     }
 
-    public void setMessageHandler(SimpleChannelInboundHandler<NetMessage> messageHandler) {
+    public void setMessageHandler(NetMessageHandler messageHandler) {
         this.messageHandler = messageHandler;
     }
 
@@ -212,17 +214,13 @@ public class NetClient {
 
                 int idleTimeoutSeconds = getClientOptions().getIdleTimeoutSeconds();
                 channelPipe.addLast(CHANNEL_STATE_AWARE_HANDLER, new IdleStateHandler(idleTimeoutSeconds, 0, 0));
-                channelPipe.addLast(CHANNEL_STATE_HANDLER, new NetChannelStateHandler());
+                channelPipe.addLast(CHANNEL_STATE_HANDLER, stateHandler);
                 int maxFrameLength = getClientOptions().getMaxFrameLength();
                 channelPipe.addLast(MESSAGE_DECODER, new MessageDecoder(maxFrameLength));
                 int heartBeatIntervalMills = getClientOptions().getHeartBeatIntervalMills();
                 channelPipe.addLast(MESSAGE_HEARTBEAT, new HeartBeatMessageClientHandler(heartBeatIntervalMills));
                 channelPipe.addLast(MESSAGE_CALLBACK_HANDLER, new NetClientCallbackHandler(NetClient.this));
-
-                // 这边假设client可以不监听message，统一由server监听处理
-                if (getMessageHandler() != null) {
-                    channelPipe.addLast(MESSAGE_HANDLER, getMessageHandler());
-                }
+                channelPipe.addLast(MESSAGE_HANDLER, messageHandler);
             }
         };
     }

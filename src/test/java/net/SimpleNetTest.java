@@ -59,8 +59,10 @@ public class SimpleNetTest {
 //        simpleBigDataMessage.setData(strReq.getBytes());
         netClient.sendMessage(simpleBigDataMessage);
 
-        Thread.sleep(10000);
+        Thread.sleep(2000);
         netClient.shutdown();
+
+        Thread.sleep(10000);
 
 
     }

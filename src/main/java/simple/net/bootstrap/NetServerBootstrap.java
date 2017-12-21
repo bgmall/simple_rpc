@@ -1,7 +1,10 @@
 package simple.net.bootstrap;
 
+import io.netty.util.internal.logging.InternalLogger;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import simple.net.NetChannelStateHandler;
 import simple.net.NetMessageHandler;
 import simple.net.NetServer;
 import simple.net.NetServerOptions;
@@ -13,34 +16,57 @@ import java.util.Properties;
 @Component
 public class NetServerBootstrap {
 
-    private MessageDispatcher messageDispatcher;
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetServerBootstrap.class);
 
     private NetServerOptions serverOptions;
 
     private NetServer netServer;
 
+    private MessageDispatcher messageDispatcher;
+
+    private NetChannelStateHandler stateHandler;
+
+    private NetMessageHandler messageHandler;
+
     @Autowired
     private NetBootstrap netBootstrap;
 
     public void start() {
-        netBootstrap.start();
-
         if (messageDispatcher == null) {
             throw new RuntimeException("message dispatcher is null");
         }
 
         initServerOptions();
 
+        netBootstrap.start();
+
+        if (stateHandler == null) {
+            stateHandler = new NetChannelStateHandler();
+        }
+
+        if (messageHandler == null) {
+            messageHandler = new NetMessageHandler(messageDispatcher);
+        }
+
         netServer = new NetServer(serverOptions);
         netServer.setMessageHandler(new NetMessageHandler(messageDispatcher));
+        netServer.setStateHandler(stateHandler);
         netServer.start();
     }
 
     public void shutdown() {
-        netBootstrap.shutdown();
-
         if (netServer != null) {
             netServer.shutdown();
+        }
+
+        netBootstrap.shutdown();
+
+        if (stateHandler != null) {
+            stateHandler = null;
+        }
+
+        if (messageHandler != null) {
+            messageHandler = null;
         }
     }
 
@@ -56,7 +82,8 @@ public class NetServerBootstrap {
         serverOptions = new NetServerOptions();
         Properties conf = PropsUtil.loadProps("server.properties");
         if (conf == null) {
-            throw new RuntimeException("can't find server.properties file");
+            conf = new Properties();
+            logger.warn("can't find server.properties file, use default values");
         }
 
         //  默认超时10s

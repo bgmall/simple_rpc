@@ -1,7 +1,10 @@
 package simple.net.bootstrap;
 
+import io.netty.util.internal.logging.InternalLogger;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import simple.net.NetChannelStateHandler;
 import simple.net.NetClient;
 import simple.net.NetClientOptions;
 import simple.net.NetMessageHandler;
@@ -18,11 +21,15 @@ import java.util.concurrent.ConcurrentMap;
 @Component
 public class NetClientBootstrap {
 
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetClientBootstrap.class);
+
     private final ConcurrentMap<Integer, NetClient> serverIdToClient = new ConcurrentHashMap<>();
 
     private NetClientOptions clientOptions;
 
     private MessageDispatcher messageDispatcher;
+
+    private NetChannelStateHandler stateHandler;
 
     private NetMessageHandler messageHandler;
 
@@ -30,19 +37,31 @@ public class NetClientBootstrap {
     private NetBootstrap netBootstrap;
 
     public void start() {
+        initClientOptions();
+
         netBootstrap.start();
 
-        if (messageDispatcher != null) {
-            messageHandler = new NetMessageHandler(messageDispatcher);
+        if (stateHandler == null) {
+            stateHandler = new NetChannelStateHandler();
         }
 
-        initClientOptions();
+        if (messageHandler == null) {
+            messageHandler = new NetMessageHandler(messageDispatcher);
+        }
     }
 
     public void shutdown() {
+        closeAllNetClient();
+
         netBootstrap.shutdown();
 
-        closeAllNetClient();
+        if (stateHandler != null) {
+            stateHandler = null;
+        }
+
+        if (messageHandler != null) {
+            messageHandler = null;
+        }
     }
 
     public NetClient createNetClient(int serverId, String host, int port) {
@@ -52,9 +71,8 @@ public class NetClientBootstrap {
             return oldNetClient;
         }
 
-        if (messageHandler != null) {
-            netClient.setMessageHandler(messageHandler);
-        }
+        netClient.setStateHandler(stateHandler);
+        netClient.setMessageHandler(messageHandler);
         netClient.start();
         return netClient;
     }
@@ -74,7 +92,8 @@ public class NetClientBootstrap {
         clientOptions = new NetClientOptions();
         Properties conf = PropsUtil.loadProps("client.properties");
         if (conf == null) {
-            throw new RuntimeException("can't find client.properties file");
+            conf = new Properties();
+            logger.warn("can't find client.properties file, use default values");
         }
 
         //  默认超时10s

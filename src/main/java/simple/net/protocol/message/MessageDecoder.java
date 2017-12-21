@@ -10,6 +10,7 @@ import simple.net.protocol.ProtocolFactoryManager;
 
 import java.util.List;
 
+// can't be shareable
 public class MessageDecoder extends ByteToMessageDecoder {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(MessageDecoder.class);

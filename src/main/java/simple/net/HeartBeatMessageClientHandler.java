@@ -27,7 +27,7 @@ public class HeartBeatMessageClientHandler extends SimpleChannelInboundHandler<N
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         if (heartBeat == null) {
-            logger.info("start heartbeat schedule task");
+            logger.info("start heartbeat schedule task, channel[{}] active", ctx.channel());
             heartBeat = ctx.executor().scheduleAtFixedRate(
                     new HeartBeatMessageClientHandler.HeartBeatTask(ctx), 0, heartBeatIntervalMills,
                     TimeUnit.MILLISECONDS);
@@ -36,9 +36,19 @@ public class HeartBeatMessageClientHandler extends SimpleChannelInboundHandler<N
     }
 
     @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        if (heartBeat != null) {
+            logger.info("stop heartbeat schedule task, channel[{}] inactive", ctx.channel());
+            heartBeat.cancel(true);
+            heartBeat = null;
+        }
+        ctx.fireChannelInactive();
+    }
+
+    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (heartBeat != null) {
-            logger.info("stop heartbeat schedule task");
+            logger.info("stop heartbeat schedule task, channel[{}] exception", ctx.channel());
             heartBeat.cancel(true);
             heartBeat = null;
         }
