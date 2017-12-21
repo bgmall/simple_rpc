@@ -28,6 +28,8 @@ public class NetServer {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetServer.class);
 
+    private int port;
+
     private NetServerOptions serverOptions;
 
     private ServerBootstrap serverBootstrap;
@@ -80,7 +82,8 @@ public class NetServer {
         serverBootstrap.childOption(ChannelOption.SO_SNDBUF, serverOptions.getSendBufferSize());
         serverBootstrap.childHandler(createNetServerChannelInitializer());
 
-        listen(serverOptions.getListenPort());
+        int port = this.port != 0 ? this.port : serverOptions.getListenPort();
+        listen(port);
     }
 
     private void listen(int port) {
@@ -110,6 +113,14 @@ public class NetServer {
             workerGroup.shutdownGracefully();
             workerGroup = null;
         }
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
     public NetServerOptions getServerOptions() {

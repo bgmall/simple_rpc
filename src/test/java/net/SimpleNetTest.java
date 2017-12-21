@@ -23,8 +23,9 @@ public class SimpleNetTest {
         clientBootstrap.start();
         serverBootstrap = context.getBean(NetServerBootstrap.class);
         serverBootstrap.setMessageDispatcher(new SimpleMessageDispatcher());
+        serverBootstrap.setPort(8100);
         serverBootstrap.start();
-        clientBootstrap.createNetClient(1, "127.0.0.1", 8000);
+        clientBootstrap.createNetClient(1, "127.0.0.1", 8100);
     }
 
     @AfterClass
@@ -62,7 +63,7 @@ public class SimpleNetTest {
         Thread.sleep(2000);
         netClient.shutdown();
 
-        Thread.sleep(10000);
+        Thread.sleep(2000);
 
 
     }

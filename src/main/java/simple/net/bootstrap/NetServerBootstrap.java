@@ -18,6 +18,8 @@ public class NetServerBootstrap {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NetServerBootstrap.class);
 
+    private int port;
+
     private NetServerOptions serverOptions;
 
     private NetServer netServer;
@@ -49,6 +51,7 @@ public class NetServerBootstrap {
         }
 
         netServer = new NetServer(serverOptions);
+        netServer.setPort(getPort());
         netServer.setMessageHandler(new NetMessageHandler(messageDispatcher));
         netServer.setStateHandler(stateHandler);
         netServer.start();
@@ -68,6 +71,14 @@ public class NetServerBootstrap {
         if (messageHandler != null) {
             messageHandler = null;
         }
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
     public MessageDispatcher getMessageDispatcher() {
