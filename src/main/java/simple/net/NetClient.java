@@ -54,8 +54,6 @@ public class NetClient {
 
     private Bootstrap bootstrap;
 
-    private EventLoopGroup workerGroup;
-
     private NetClientOptions clientOptions;
 
     private String remoteAddress;
@@ -73,6 +71,8 @@ public class NetClient {
     private AtomicLong correlationId = new AtomicLong(1);
 
     private final ConcurrentMap<Long, ClientCallState> requestMap = new ConcurrentHashMap<>();
+
+    private static EventLoopGroup workerGroup;
 
     private static Timer timer;
 
