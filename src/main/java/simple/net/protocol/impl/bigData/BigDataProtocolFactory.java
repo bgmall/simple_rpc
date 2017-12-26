@@ -39,7 +39,7 @@ public class BigDataProtocolFactory implements ProtocolFactory {
         int msgId = in.readInt();
         int length = in.readInt();
 
-        if (length <= 0) {
+        if (length < 5) {
             logger.error("invalid length for msgId[{}], force closing channel[{}]", msgId, ctx.channel());
             ctx.close();
             return;
@@ -81,7 +81,7 @@ public class BigDataProtocolFactory implements ProtocolFactory {
         }
 
         byte[] bigData = null;
-        int bigDataLength = length - simpleDataLength - 1;
+        int bigDataLength = length - simpleDataLength - 5;
         if (bigDataLength > 0) {
             bigData = new byte[bigDataLength];
             in.readBytes(bigData);
@@ -125,7 +125,7 @@ public class BigDataProtocolFactory implements ProtocolFactory {
             simpleDataLength = simpleData.length;
         }
 
-        out.writeInt(simpleDataLength + bigData.length + 1);
+        out.writeInt(simpleDataLength + bigData.length + 5);
         out.writeByte(compressed);
         out.writeInt(simpleDataLength);
         if (simpleDataLength > 0) {
