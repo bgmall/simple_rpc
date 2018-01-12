@@ -10,6 +10,8 @@ import java.util.Collection;
 public class ProtostuffCodecFactory implements CodecFactory {
 
     public ProtostuffCodecFactory() {
+        // an empty collection message is still written, view protostuff.RuntimeEnv.java: COLLECTION_SCHEMA_ON_REPEATED_FIELDS
+        System.setProperty("protostuff.runtime.collection_schema_on_repeated_fields", "true");
         preProcess();
     }
 

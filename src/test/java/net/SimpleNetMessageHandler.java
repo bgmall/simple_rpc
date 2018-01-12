@@ -10,6 +10,7 @@ public class SimpleNetMessageHandler {
     @NetMessageInvoke(msgId = 1)
     public void handleSimpleMessage(Channel channel, SimpleNetMessage message) {
         System.out.println(message.getMsg());
+        System.out.println(message.getList());
         channel.writeAndFlush(new SimpleNetReturnMessage());
         channel.writeAndFlush(new SimpleNetReturnMessage());
     }
